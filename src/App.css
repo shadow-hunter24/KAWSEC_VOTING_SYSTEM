@@ -31,6 +31,7 @@
   --color-accent:         #d4a017;
   --color-accent-light:   #f5edd8;
   --color-bg:             #f8f6f1;
+  --navbar-height:        80px;
 }
 
 * {
@@ -198,7 +199,7 @@ button {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 150px 8% 80px;
+  padding: calc(var(--navbar-height) + 70px) 8% 80px;
   color: white;
   background-color: #0d2b19; /* fallback while image loads */
   background-image:
@@ -613,7 +614,7 @@ footer > p {
   }
 
   .hero {
-    padding: 150px 6% 70px;
+    padding: calc(var(--navbar-height) + 70px) 6% 70px;
     /* Fallback colour while image loads on slow connections */
     background-color: #0d2b19;
   }

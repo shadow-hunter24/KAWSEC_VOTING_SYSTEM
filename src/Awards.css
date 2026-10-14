@@ -710,6 +710,12 @@
   font-weight: 700;
 }
 
+.vote-cast-other {
+  color: #bbb;
+  font-size: 13px;
+  font-weight: 400;
+}
+
 /* ── RESPONSIVE ──────────────────────────────────────────── */
 
 @media (max-width: 800px) {

@@ -729,19 +729,19 @@ export default function Register() {
           </section>
 
 
-          {/* ── 04 REUNION DETAILS ──────────────────────────────── */}
+          {/* ── 04 KAWSEC EVENT DETAILS ──────────────────────────── */}
           <section className="form-section" aria-labelledby="section-reunion">
             <div className="section-heading">
               <span aria-hidden="true">04</span>
               <div>
-                <h2 id="section-reunion">Reunion Details</h2>
+                <h2 id="section-reunion">KAWSEC Event Details</h2>
                 <p>Help us prepare for your attendance.</p>
               </div>
             </div>
 
             <div className="form-group" role="group" aria-labelledby="attending-label">
               <span id="attending-label" className="group-label">
-                Will you attend the reunion?{" "}
+                Will you attend the KAWSEC event?{" "}
                 <span className="required-star" aria-hidden="true">*</span>
               </span>
 

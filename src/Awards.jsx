@@ -247,11 +247,11 @@ export default function AwardsPage() {
 
     const { data: voteData } = await supabase
       .from("award_votes")
-      .select("category_id")
+      .select("category_id, nominee_id")
       .eq("voter_id", memberId);
 
     const voteMap = {};
-    (voteData || []).forEach((v) => { voteMap[v.category_id] = true; });
+    (voteData || []).forEach((v) => { voteMap[v.category_id] = v.nominee_id; });
     setMyVotes(voteMap);
   }
 
@@ -364,7 +364,7 @@ export default function AwardsPage() {
       if (rpcError) throw rpcError;
       if (!data?.success) throw new Error(data?.message || "Vote could not be recorded.");
 
-      setMyVotes((prev) => ({ ...prev, [activeCategory.id]: true }));
+      setMyVotes((prev) => ({ ...prev, [activeCategory.id]: pendingVote.nomineeId }));
       setMessage(data.message || "Your vote has been recorded. Thank you!");
       setShowVoteSuccess(true);
       setTimeout(() => setShowVoteSuccess(false), 3000);
@@ -965,8 +965,19 @@ export default function AwardsPage() {
                     </div>
 
                     {myVotes[activeCategory.id] ? (
-                      <span className="vote-cast-label" aria-label="You voted for this finalist">
-                        <Check size={13} style={{ display: "inline", verticalAlign: "middle" }} /> Voted
+                      <span
+                        className="vote-cast-label"
+                        aria-label={
+                          myVotes[activeCategory.id] === f.classmate_id
+                            ? "You voted for this finalist"
+                            : undefined
+                        }
+                      >
+                        {myVotes[activeCategory.id] === f.classmate_id ? (
+                          <><Check size={13} style={{ display: "inline", verticalAlign: "middle" }} /> Voted</>
+                        ) : (
+                          <span className="vote-cast-other" aria-hidden="true">—</span>
+                        )}
                       </span>
                     ) : (
                       <button
