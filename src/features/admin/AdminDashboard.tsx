@@ -1,100 +1,89 @@
 import { Link } from 'react-router-dom';
-import { Users, Settings, FileText, BarChart2, LogIn } from 'lucide-react';
+import { Users, Settings, FileText, BarChart2 } from 'lucide-react';
 
-const PRIMARY = '#1a4d2e';
-const GOLD = '#d4a017';
+const C = {
+  greenPrimary: '#1a4d2e',
+  greenDark:    '#0f2d1a',
+  greenLight:   '#e8f5ee',
+  creamBg:      '#fffdf7',
+  creamCard:    '#f5f0e8',
+  creamBorder:  '#e8e0cc',
+  textMuted:    '#5a5a4a',
+};
 
 const cards = [
-  {
-    icon: <BarChart2 size={28} />,
-    title: 'Turnout Monitoring',
-    desc: 'Track live voter participation rates and real-time turnout statistics across all houses and classes.',
-    phase: 'Phase 5',
-  },
-  {
-    icon: <Users size={28} />,
-    title: 'Candidate Management',
-    desc: 'Review, approve, or reject candidate applications. Manage photos and manifestos.',
-    phase: 'Phase 3',
-  },
-  {
-    icon: <Settings size={28} />,
-    title: 'Election Settings',
-    desc: 'Configure election schedules, positions, and eligibility rules for each voting cycle.',
-    phase: 'Phase 5',
-  },
-  {
-    icon: <FileText size={28} />,
-    title: 'Audit Logs',
-    desc: 'Full audit trail of all system activities, logins, and administrative actions.',
-    phase: 'Phase 5',
-  },
+  { Icon: BarChart2, title: 'Turnout Monitoring',   desc: 'Track live voter participation rates and real-time turnout across all houses and classes.', phase: 'Phase 5' },
+  { Icon: Users,     title: 'Candidate Management', desc: 'Review, approve or reject candidate applications. Manage photos and manifestos.',             phase: 'Phase 3' },
+  { Icon: Settings,  title: 'Election Settings',    desc: 'Configure election schedules, positions and eligibility rules for each voting cycle.',        phase: 'Phase 5' },
+  { Icon: FileText,  title: 'Audit Logs',           desc: 'Full tamper-evident audit trail of all system activities, logins and admin actions.',         phase: 'Phase 5' },
 ];
 
 export default function AdminDashboard() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f0f7f2' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: C.creamBg }}>
+
       {/* Header */}
-      <header className="py-6 px-6 shadow-md text-white" style={{ backgroundColor: PRIMARY }}>
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">Admin Dashboard</h1>
-            <p className="text-sm opacity-70 mt-0.5">KAWSEC Elections — Nkawkaw Senior High School</p>
+      <header style={{ backgroundColor: C.greenPrimary, padding: '0 24px', boxShadow: '0 2px 12px rgba(15,45,26,0.3)' }}>
+        <div style={{ maxWidth: '1100px', margin: '0 auto', height: '68px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <img src="/logo.png" alt="KAWSEC" width={40} height={40} style={{ objectFit: 'contain' }} />
+            <div>
+              <h1 style={{ color: '#fff', fontWeight: 800, fontSize: '16px' }}>Admin Dashboard</h1>
+              <p style={{ color: 'rgba(245,240,232,0.65)', fontSize: '11px' }}>KAWSEC Elections — Nkawkaw Senior High School</p>
+            </div>
           </div>
-          <div
-            className="text-xs font-semibold px-3 py-1 rounded-full"
-            style={{ backgroundColor: GOLD, color: '#1a1a1a' }}
-            aria-label="IT Coordinator panel"
-          >
-            IT Coordinator
-          </div>
+          <span style={{
+            fontSize: '12px', fontWeight: 700, padding: '6px 14px', borderRadius: '999px',
+            backgroundColor: C.creamCard, color: C.greenPrimary,
+          }}>IT Coordinator</span>
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="max-w-6xl mx-auto px-4 py-10">
-        <p className="text-gray-500 mb-8 text-sm">
-          Select a module below. Features will be activated as each phase is implemented.
+      {/* Content */}
+      <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '40px 24px' }}>
+        <p style={{ fontSize: '14px', color: C.textMuted, marginBottom: '32px' }}>
+          Select a module below. Features will be activated as each development phase is completed.
         </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {cards.map(card => (
-            <div
-              key={card.title}
-              className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md transition-shadow"
-              role="article"
-              aria-label={`${card.title} — ${card.phase}`}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px' }}>
+          {cards.map(({ Icon, title, desc, phase }) => (
+            <div key={title} role="article" aria-label={`${title} — ${phase}`}
+              style={{
+                backgroundColor: C.creamBg, borderRadius: '16px', padding: '24px',
+                border: `1px solid ${C.creamBorder}`,
+                boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+                transition: 'box-shadow 0.2s, border-color 0.2s',
+              }}
+              onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 6px 20px rgba(26,77,46,0.1)'; el.style.borderColor = '#a3c4ae'; }}
+              onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'; el.style.borderColor = C.creamBorder; }}
             >
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-white"
-                style={{ backgroundColor: PRIMARY }}
-                aria-hidden="true"
-              >
-                {card.icon}
-              </div>
-              <h2 className="font-bold text-gray-800 mb-1">{card.title}</h2>
-              <p className="text-sm text-gray-500 mb-4">{card.desc}</p>
-              <span
-                className="inline-block text-xs font-semibold px-3 py-1 rounded-full"
-                style={{ backgroundColor: '#f0f7f2', color: PRIMARY }}
-              >
-                Coming Soon · {card.phase}
-              </span>
+              <div style={{
+                width: '48px', height: '48px', borderRadius: '12px', backgroundColor: C.greenLight,
+                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '16px',
+              }} aria-hidden="true"><Icon size={24} color={C.greenPrimary} /></div>
+              <h2 style={{ fontWeight: 700, fontSize: '15px', color: '#1a1a1a', marginBottom: '6px' }}>{title}</h2>
+              <p style={{ fontSize: '13px', color: C.textMuted, lineHeight: 1.6, marginBottom: '16px' }}>{desc}</p>
+              <span style={{
+                display: 'inline-block', fontSize: '11px', fontWeight: 700,
+                padding: '4px 10px', borderRadius: '999px',
+                backgroundColor: C.creamCard, color: C.greenPrimary,
+                border: `1px solid ${C.creamBorder}`,
+              }}>Coming Soon · {phase}</span>
             </div>
           ))}
         </div>
 
-        {/* Sign out */}
-        <div className="mt-10 text-center">
-          <Link
-            to="/"
-            className="inline-flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-xl border transition-colors hover:bg-white"
-            style={{ color: PRIMARY, borderColor: PRIMARY }}
-            aria-label="Sign out and return to home"
-          >
-            <LogIn size={16} aria-hidden="true" />
-            Sign Out
-          </Link>
+        <div style={{ marginTop: '40px', textAlign: 'center' }}>
+          <Link to="/" style={{
+            display: 'inline-flex', alignItems: 'center', gap: '8px',
+            padding: '10px 22px', borderRadius: '10px',
+            border: `1.5px solid ${C.creamBorder}`, color: C.textMuted,
+            fontSize: '13px', fontWeight: 600, textDecoration: 'none',
+            transition: 'border-color 0.15s, color 0.15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = C.greenPrimary; e.currentTarget.style.color = C.greenPrimary; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = C.creamBorder; e.currentTarget.style.color = C.textMuted; }}
+          >← Sign Out &amp; Return Home</Link>
         </div>
       </main>
     </div>

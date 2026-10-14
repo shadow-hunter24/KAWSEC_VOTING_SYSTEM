@@ -1,7 +1,51 @@
 @import "tailwindcss";
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body { font-family: 'Inter', system-ui, sans-serif; }
-a { text-decoration: none; color: inherit; }
-button { font-family: inherit; cursor: pointer; }
+/* ── KAWSEC Design System — Green & Cream ────────────────────
+   Primary Green:  #1a4d2e  (navbar, buttons, headings)
+   Mid Green:      #2d7a4f  (hover, accents)
+   Dark Green:     #0f2d1a  (hero gradient, footer)
+   Cream BG:       #fffdf7  (page background)
+   Cream Card:     #f5f0e8  (section fills, card backgrounds)
+   Cream Border:   #e8e0cc  (dividers, card borders)
+   Text Primary:   #1a1a1a
+   Text Muted:     #5a5a4a
+   White:          #ffffff
+─────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif !important;
+  background-color: #fffdf7 !important;
+  color: #1a1a1a !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+a  { text-decoration: none; color: inherit; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+img { display: block; max-width: 100%; }
+
+@layer base {
+  :root {
+    --green-primary:  #1a4d2e;
+    --green-mid:      #2d7a4f;
+    --green-dark:     #0f2d1a;
+    --green-light:    #e8f5ee;
+    --cream-bg:       #fffdf7;
+    --cream-card:     #f5f0e8;
+    --cream-border:   #e8e0cc;
+    --text-primary:   #1a1a1a;
+    --text-muted:     #5a5a4a;
+  }
+}

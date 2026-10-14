@@ -1,160 +1,127 @@
 import { Link } from 'react-router-dom';
 import { Trophy } from 'lucide-react';
 
-const PRIMARY = '#1a4d2e';
-const GOLD = '#d4a017';
+const C = {
+  greenPrimary: '#1a4d2e',
+  greenLight:   '#e8f5ee',
+  creamBg:      '#fffdf7',
+  creamCard:    '#f5f0e8',
+  creamBorder:  '#e8e0cc',
+  textMuted:    '#5a5a4a',
+};
 
-interface MockCandidate {
-  name: string;
-  votes: number;
-}
-
-interface MockResult {
-  position: string;
-  candidates: [MockCandidate, MockCandidate];
-}
+interface MockCandidate { name: string; votes: number; }
+interface MockResult    { position: string; candidates: [MockCandidate, MockCandidate]; }
 
 const mockResults: MockResult[] = [
-  {
-    position: 'Head Boy (School Prefect — Male)',
-    candidates: [
-      { name: 'Kwame Asante', votes: 45 },
-      { name: 'Kofi Mensah', votes: 32 },
-    ],
-  },
-  {
-    position: 'Head Girl (School Prefect — Female)',
-    candidates: [
-      { name: 'Abena Owusu', votes: 51 },
-      { name: 'Ama Boateng', votes: 28 },
-    ],
-  },
-  {
-    position: 'Sports Prefect (Male)',
-    candidates: [
-      { name: 'Yaw Darko', votes: 38 },
-      { name: 'Kwabena Frimpong', votes: 35 },
-    ],
-  },
+  { position: 'Head Boy — School Prefect (Male)',   candidates: [{ name: 'Kwame Asante',      votes: 45 }, { name: 'Kofi Mensah',       votes: 32 }] },
+  { position: 'Head Girl — School Prefect (Female)',candidates: [{ name: 'Abena Owusu',       votes: 51 }, { name: 'Ama Boateng',       votes: 28 }] },
+  { position: 'Sports Prefect (Male)',              candidates: [{ name: 'Yaw Darko',         votes: 38 }, { name: 'Kwabena Frimpong',  votes: 35 }] },
 ];
 
 function ResultCard({ result }: { result: MockResult }) {
-  const total = result.candidates.reduce((sum, c) => sum + c.votes, 0);
+  const total  = result.candidates.reduce((s, c) => s + c.votes, 0);
   const winner = result.candidates[0];
   const runner = result.candidates[1];
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-      <h3 className="font-bold text-gray-700 text-sm mb-4">{result.position}</h3>
+    <div style={{
+      backgroundColor: '#fff', borderRadius: '16px', padding: '22px',
+      border: `1px solid ${C.creamBorder}`, boxShadow: '0 1px 4px rgba(0,0,0,0.04)',
+    }}>
+      <h3 style={{ fontWeight: 700, fontSize: '13px', color: C.textMuted, marginBottom: '16px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        {result.position}
+      </h3>
 
       {/* Winner */}
-      <div
-        className="rounded-xl p-4 mb-3"
-        style={{ backgroundColor: '#f0f7f2', border: `1px solid ${PRIMARY}22` }}
-        aria-label={`Winner: ${winner.name}`}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Trophy size={16} style={{ color: GOLD }} aria-hidden="true" />
-            <span className="font-bold text-sm" style={{ color: PRIMARY }}>{winner.name}</span>
+      <div style={{
+        borderRadius: '12px', padding: '14px 16px', marginBottom: '10px',
+        backgroundColor: C.greenLight, border: `1px solid ${C.greenPrimary}22`,
+      }} aria-label={`Winner: ${winner.name}`}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Trophy size={15} color={C.greenPrimary} aria-hidden="true" />
+            <span style={{ fontWeight: 700, fontSize: '14px', color: C.greenPrimary }}>{winner.name}</span>
           </div>
-          <span className="text-sm font-bold" style={{ color: PRIMARY }}>{winner.votes} votes</span>
+          <span style={{ fontWeight: 700, fontSize: '13px', color: C.greenPrimary }}>{winner.votes} votes</span>
         </div>
-        <div className="h-2 rounded-full overflow-hidden bg-gray-200">
-          <div
-            className="h-full rounded-full"
-            style={{ width: `${(winner.votes / total) * 100}%`, backgroundColor: PRIMARY }}
-            role="progressbar"
-            aria-valuenow={winner.votes}
-            aria-valuemin={0}
-            aria-valuemax={total}
-            aria-label={`${winner.name}: ${winner.votes} of ${total} votes`}
-          />
+        <div style={{ height: '6px', borderRadius: '999px', backgroundColor: '#c8e6d0', overflow: 'hidden' }}>
+          <div style={{ height: '100%', borderRadius: '999px', backgroundColor: C.greenPrimary, width: `${(winner.votes / total) * 100}%` }}
+            role="progressbar" aria-valuenow={winner.votes} aria-valuemin={0} aria-valuemax={total}
+            aria-label={`${winner.name}: ${winner.votes} of ${total} votes`} />
         </div>
       </div>
 
       {/* Runner-up */}
-      <div className="rounded-xl p-4" style={{ backgroundColor: '#f9fafb' }}>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-gray-600">{runner.name}</span>
-          <span className="text-sm text-gray-500">{runner.votes} votes</span>
+      <div style={{ borderRadius: '12px', padding: '14px 16px', backgroundColor: C.creamCard }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+          <span style={{ fontSize: '13px', color: C.textMuted }}>{runner.name}</span>
+          <span style={{ fontSize: '13px', color: C.textMuted }}>{runner.votes} votes</span>
         </div>
-        <div className="h-2 rounded-full overflow-hidden bg-gray-200">
-          <div
-            className="h-full rounded-full bg-gray-400"
-            style={{ width: `${(runner.votes / total) * 100}%` }}
-            role="progressbar"
-            aria-valuenow={runner.votes}
-            aria-valuemin={0}
-            aria-valuemax={total}
-            aria-label={`${runner.name}: ${runner.votes} of ${total} votes`}
-          />
+        <div style={{ height: '6px', borderRadius: '999px', backgroundColor: C.creamBorder, overflow: 'hidden' }}>
+          <div style={{ height: '100%', borderRadius: '999px', backgroundColor: '#a3b89c', width: `${(runner.votes / total) * 100}%` }}
+            role="progressbar" aria-valuenow={runner.votes} aria-valuemin={0} aria-valuemax={total}
+            aria-label={`${runner.name}: ${runner.votes} of ${total} votes`} />
         </div>
       </div>
 
-      <p className="text-xs text-gray-400 mt-3 text-right">{total} total votes cast</p>
+      <p style={{ fontSize: '12px', color: C.textMuted, marginTop: '10px', textAlign: 'right' }}>{total} votes cast</p>
     </div>
   );
 }
 
 export default function ResultsPage() {
-  const published = false; // Toggle to true when live results exist
+  const published = false;
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#f0f7f2' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: C.creamBg }}>
+
       {/* Header */}
-      <header className="py-6 px-6 shadow-md text-white" style={{ backgroundColor: PRIMARY }}>
-        <div className="max-w-4xl mx-auto flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-xl font-bold">Election Results</h1>
-            <p className="text-sm opacity-70 mt-0.5">KAWSEC Prefect Elections · Nkawkaw Senior High School</p>
+      <header style={{ backgroundColor: C.greenPrimary, padding: '0 24px', boxShadow: '0 2px 12px rgba(15,45,26,0.3)' }}>
+        <div style={{ maxWidth: '1000px', margin: '0 auto', height: '68px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <img src="/logo.png" alt="KAWSEC" width={40} height={40} style={{ objectFit: 'contain' }} />
+            <div>
+              <h1 style={{ color: '#fff', fontWeight: 800, fontSize: '16px' }}>Election Results</h1>
+              <p style={{ color: 'rgba(245,240,232,0.65)', fontSize: '11px' }}>KAWSEC Prefect Elections · Nkawkaw Senior High School</p>
+            </div>
           </div>
-          <Link to="/" className="text-sm opacity-70 hover:opacity-100 transition-opacity">
-            ← Back to Home
-          </Link>
+          <Link to="/" style={{ fontSize: '13px', color: 'rgba(245,240,232,0.7)', textDecoration: 'none' }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#fff'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(245,240,232,0.7)'; }}
+          >← Back to Home</Link>
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-10">
-        {!published ? (
-          /* Not yet published */
-          <div className="text-center py-16">
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-white"
-              style={{ backgroundColor: PRIMARY }}
-              aria-hidden="true"
-            >
-              <Trophy size={36} />
-            </div>
-            <h2 className="text-xl font-bold mb-2" style={{ color: PRIMARY }}>
-              Results Not Yet Published
-            </h2>
-            <p className="text-gray-500 max-w-sm mx-auto">
+      <main style={{ maxWidth: '1000px', margin: '0 auto', padding: '48px 24px' }}>
+
+        {!published && (
+          <div style={{ textAlign: 'center', padding: '56px 0' }}>
+            <div style={{
+              width: '72px', height: '72px', borderRadius: '50%', backgroundColor: C.greenLight,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px',
+            }} aria-hidden="true"><Trophy size={32} color={C.greenPrimary} /></div>
+            <h2 style={{ fontSize: '20px', fontWeight: 700, color: C.greenPrimary, marginBottom: '10px' }}>Results Not Yet Published</h2>
+            <p style={{ fontSize: '14px', color: C.textMuted, maxWidth: '380px', margin: '0 auto', lineHeight: 1.65 }}>
               Results will appear here once the IT Coordinator reviews, verifies, and officially publishes them.
             </p>
           </div>
-        ) : null}
+        )}
 
-        {/* Demo results section */}
-        <div className="mt-4">
-          <div className="flex items-center gap-3 mb-6">
-            <h2 className="font-bold text-lg" style={{ color: PRIMARY }}>Demo Results</h2>
-            <span
-              className="text-xs font-semibold px-2 py-0.5 rounded-full"
-              style={{ backgroundColor: GOLD, color: '#1a1a1a' }}
-            >
-              Demo Data
-            </span>
+        {/* Demo section */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <h2 style={{ fontWeight: 700, fontSize: '18px', color: C.greenPrimary }}>Demo Results</h2>
+            <span style={{
+              fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px',
+              backgroundColor: C.creamCard, color: C.textMuted, border: `1px solid ${C.creamBorder}`,
+            }}>Demo Data</span>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockResults.map(r => (
-              <ResultCard key={r.position} result={r} />
-            ))}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
+            {mockResults.map(r => <ResultCard key={r.position} result={r} />)}
           </div>
-
-          <p className="text-xs text-gray-400 mt-6 text-center italic">
-            Demo data — replace with live results when the IT Coordinator publishes them.
+          <p style={{ fontSize: '12px', color: C.textMuted, marginTop: '24px', textAlign: 'center', fontStyle: 'italic' }}>
+            Demo data — replaced with live results when the IT Coordinator publishes them.
           </p>
         </div>
       </main>
