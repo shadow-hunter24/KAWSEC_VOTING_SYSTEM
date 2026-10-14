@@ -66,7 +66,7 @@ const VALIDATORS = {
 
   class_stream: (v) => {
     const trimmed = v.trim();
-    if (!trimmed) return "Class / Stream is required (e.g. 3A12).";
+    if (!trimmed) return "Class / Stream is required (e.g. Science A, Arts B).";
     if (trimmed.length > 20) return "Class / Stream must be 20 characters or fewer.";
     return null;
   },
@@ -613,7 +613,7 @@ export default function Register() {
                   value={formData.class_stream}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  placeholder="e.g. 3A12"
+                  placeholder="e.g. Science A, Arts B"
                   aria-required="true"
                   aria-describedby="class_stream-hint class_stream-error"
                   aria-invalid={!!err("class_stream")}

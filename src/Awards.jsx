@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "./lib/supabase";
 import {
@@ -154,8 +154,9 @@ export default function AwardsPage() {
   // Load categories on mount
   useEffect(() => { loadCategories(); }, []);
 
-  // Animate result bars when they scroll into view
-  useEffect(() => {
+  // Animate result bars when they scroll into view — useLayoutEffect so it runs
+  // synchronously after DOM mutations, picking up fills from all setResults batches
+  useLayoutEffect(() => {
     const fills = document.querySelectorAll(".result-bar-fill[data-pct]");
     if (!fills.length) return;
     const observer = new IntersectionObserver(
