@@ -6,13 +6,13 @@ import "./App.css";
 
 // ── Fallback values (used until DB loads or if DB is empty) ───
 const FALLBACK = {
-  event_name:       "5th Anniversary Reunion",
-  event_tagline:    "Different Paths • One Beginning • One Family",
+  event_name:       "KAWSEC Awards Night",
+  event_tagline:    "Nominate. Vote. Celebrate.",
   event_date:       "2026-12-31T10:00:00",
   event_venue:      "",
-  hero_description: "Five years after leaving SHS, we're coming together once again to reconnect, remember, celebrate and create new memories.",
-  about_copy:       "We entered SHS as young students with different dreams. In 2021, we left as classmates ready to face the world. Today, after five incredible years, we are coming together to celebrate how far we've travelled and the people we've become.",
-  footer_copyright: "© 2026 Class of 2021 Reunion. All rights reserved.",
+  hero_description: "The official voting platform for Nkawkaw Senior High School. Cast your vote, nominate your peers, and celebrate the best among us.",
+  about_copy:       "KAWSEC is the official student community of Nkawkaw Senior High School. We celebrate academic excellence, leadership, and the bonds that connect every student who has passed through our gates. This platform lets you recognise and celebrate the best among your peers.",
+  footer_copyright: "© 2026 KAWSEC Voting System. All rights reserved.",
   registration_open: "true",
 };
 
@@ -89,6 +89,21 @@ function App() {
     setMenuOpen(false);
   }
 
+  // Glassmorphism navbar scroll listener
+  useEffect(() => {
+    function handleScroll() {
+      const nav = document.querySelector(".navbar");
+      if (!nav) return;
+      if (window.scrollY > 50) {
+        nav.classList.add("scrolled");
+      } else {
+        nav.classList.remove("scrolled");
+      }
+    }
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
     <div className="app">
       {/* Skip navigation link – keyboard / screen-reader users */}
@@ -98,9 +113,9 @@ function App() {
 
       {/* Navigation */}
       <nav className="navbar" aria-label="Main navigation">
-        <div className="logo" aria-label="3A12 Class of 2021">
-          <span aria-hidden="true">3A12</span>
-          <small>CLASS OF 2021</small>
+        <div className="logo" aria-label="KAWSEC Nkawkaw SHS">
+          <span aria-hidden="true">KAWSEC</span>
+          <small>NKAWKAW SHS</small>
         </div>
 
         <div className="nav-links" role="list">
@@ -150,7 +165,7 @@ function App() {
         <a href="#memories"  onClick={handleNavClick}>Memories</a>
         <a href="#contact"   onClick={handleNavClick}>Contact</a>
         <Link to="/register" onClick={handleNavClick} className="mobile-nav-register">
-          Register for Reunion →
+          Register Now →
         </Link>
       </div>
 
@@ -162,7 +177,7 @@ function App() {
           <div className="hero-overlay" aria-hidden="true"></div>
 
           <div className="hero-content">
-            <div className="badge" aria-hidden="true"><GraduationCap size={18} aria-hidden="true" /> CLASS OF 2021</div>
+            <div className="badge" aria-hidden="true"><GraduationCap size={18} aria-hidden="true" /> NAKASS</div>
 
             <h1 id="hero-heading">
               {cfg.event_name}
@@ -184,7 +199,7 @@ function App() {
 
             <div className="hero-buttons">
               <Link to="/register" className="primary-button">
-                Register for Reunion →
+                Register Now →
               </Link>
 
               <Link to="/awards" className="secondary-button">
@@ -239,9 +254,9 @@ function App() {
           <div className="section-label" aria-hidden="true">OUR STORY</div>
 
           <h2 id="about-heading">
-            Five Years Later,
+            Our School,
             <br />
-            <span>We're Still One Class.</span>
+            <span>Our Community.</span>
           </h2>
 
           <p>
@@ -250,16 +265,16 @@ function App() {
 
           <div className="stats" role="list" aria-label="Class statistics">
             <div className="stat" role="listitem">
-              <strong>2021</strong>
-              <span>Graduation Year</span>
+              <strong>NAKASS</strong>
+              <span>Our Class</span>
             </div>
             <div className="stat" role="listitem">
-              <strong>5</strong>
-              <span>Years Later</span>
+              <strong>2026</strong>
+              <span>Awards Year</span>
             </div>
             <div className="stat" role="listitem">
               <strong>1</strong>
-              <span>Class Family</span>
+              <span>School Family</span>
             </div>
           </div>
         </section>
@@ -327,7 +342,7 @@ function App() {
         {/* Registration CTA */}
         <section className="register-section" id="register" aria-labelledby="register-heading">
           <div>
-            <div className="section-label" aria-hidden="true">CLASS OF 2021</div>
+            <div className="section-label" aria-hidden="true">KAWSEC</div>
 
             <h2 id="register-heading">
               Your Seat
@@ -395,9 +410,9 @@ function App() {
 
       {/* Footer */}
       <footer id="contact" aria-label="Site footer">
-        <div className="footer-logo" aria-label="3A12 Class of 2021">
-          <strong aria-hidden="true">3A12</strong>
-          <span>CLASS OF 2021</span>
+        <div className="footer-logo" aria-label="KAWSEC Nkawkaw SHS">
+          <strong aria-hidden="true">KAWSEC</strong>
+          <span>NKAWKAW SHS</span>
         </div>
 
         <p>{cfg.event_tagline}</p>

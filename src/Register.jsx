@@ -10,7 +10,7 @@ function generateClassId() {
     .replace(/-/g, "")
     .substring(0, 8)
     .toUpperCase();
-  return `3A12-${randomPart}`;
+  return `KAWSEC-${randomPart}`;
 }
 
 // ── Validation rules (ALL fields required) ────────────────────────────────────
@@ -374,7 +374,7 @@ export default function Register() {
           </h1>
           <p>
             Your registration for the{" "}
-            <strong>Class of 2021 5th Anniversary Reunion</strong> has been received.
+            <strong>KAWSEC Awards Night</strong> has been received.
             We're excited to see you!
           </p>
           <div className="class-id-box" aria-label="Your Classmate ID">
@@ -435,8 +435,8 @@ export default function Register() {
           <Link to="/" className="back-link" aria-label="Go back to home page">
             ← Back to Home
           </Link>
-          <p className="eyebrow">CLASS OF 2021</p>
-          <h1>Reunion Registration</h1>
+          <p className="eyebrow">KAWSEC</p>
+          <h1>KAWSEC Registration</h1>
           <p>
             All fields marked <span className="required-star" aria-label="required">*</span> are
             required. Please fill in accurate information — it helps us prepare for the event.

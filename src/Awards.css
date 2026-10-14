@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap");
+
 /* ── AWARDS PAGE ─────────────────────────────────────────── */
 
 .awards-page {
@@ -14,7 +16,7 @@
   display: flex;
   align-items: center;
   background:
-    linear-gradient(135deg, #111111 0%, #211d12 55%, #8c6d20 100%);
+    linear-gradient(135deg, #1a4d2e 0%, #0d2b19 55%, #1a4d2e 100%);
   color: white;
 }
 
@@ -40,7 +42,7 @@
 
 .awards-hero-content > span {
   display: block;
-  color: #d6b45b;
+  color: #d4a017;
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 2.5px;
@@ -51,12 +53,12 @@
   font-size: clamp(44px, 8vw, 88px);
   line-height: 0.95;
   font-weight: 400;
-  font-family: Georgia, serif;
+  font-family: "Playfair Display", serif;
   margin: 0 0 18px;
 }
 
 .awards-hero h1 strong {
-  color: #d6b45b;
+  color: #d4a017;
 }
 
 .awards-hero p {
@@ -78,7 +80,7 @@
 
 .awards-eyebrow {
   display: inline-block;
-  color: #a27b18;
+  color: #d4a017;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 2px;
@@ -134,16 +136,73 @@
 /* ── STEP: VERIFY ─────────────────────────────────────────── */
 
 .member-verification-card {
-  max-width: 560px;
+  max-width: 520px;
   margin: 0 auto;
-  padding: 40px;
   background: white;
-  border-radius: 20px;
-  box-shadow: 0 15px 50px rgba(0,0,0,0.08);
+  border-radius: 16px;
+  box-shadow: 0 15px 50px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  padding: 0;
+}
+
+.verify-card-header {
+  background: #1a4d2e;
+  padding: 16px 30px;
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.verify-card-header strong {
+  color: white;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.verify-card-header span {
+  color: #d4a017;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+/* Re-add padding to the card body (everything after the header) */
+.member-verification-card > .awards-eyebrow,
+.member-verification-card > h2,
+.member-verification-card > p,
+.member-verification-card > .awards-feedback,
+.member-verification-card > .awards-form {
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+.member-verification-card > .awards-eyebrow {
+  margin-top: 28px;
+}
+
+.member-verification-card > .awards-form {
+  padding-bottom: 40px;
+}
+
+@media (max-width: 560px) {
+  .member-verification-card > .awards-eyebrow,
+  .member-verification-card > h2,
+  .member-verification-card > p,
+  .member-verification-card > .awards-feedback,
+  .member-verification-card > .awards-form {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .verify-card-header {
+    padding: 14px 20px;
+  }
 }
 
 .member-verification-card h2 {
-  font-family: Georgia, serif;
+  font-family: "Playfair Display", serif;
   font-size: 32px;
   margin: 6px 0 10px;
 }
@@ -181,9 +240,9 @@
 }
 
 .awards-form input:focus {
-  border-color: #b28a21;
+  border-color: #d4a017;
   background: white;
-  box-shadow: 0 0 0 3px rgba(178,138,33,0.12);
+  box-shadow: 0 0 0 3px rgba(212,160,23,0.12);
 }
 
 /* BUTTONS */
@@ -202,14 +261,14 @@
 
 .awards-primary-button,
 .awards-vote-button {
-  border: 1px solid #a27b18;
-  background: #a27b18;
+  border: 1px solid #1a4d2e;
+  background: #1a4d2e;
   color: white;
 }
 
 .awards-primary-button:hover,
 .awards-vote-button:hover {
-  background: #806015;
+  background: #0d2b19;
 }
 
 .awards-primary-button:disabled,
@@ -225,8 +284,8 @@
 }
 
 .awards-outline-button:hover {
-  border-color: #a27b18;
-  color: #a27b18;
+  border-color: #d4a017;
+  color: #d4a017;
 }
 
 /* ── STEP: BROWSE ─────────────────────────────────────────── */
@@ -252,7 +311,7 @@
 
 .awards-class-id {
   background: #f5edd8;
-  color: #8a6310;
+  color: #1a4d2e;
   padding: 4px 9px;
   border-radius: 6px;
   font-size: 12px;
@@ -264,7 +323,7 @@
 }
 
 .awards-section-heading h2 {
-  font-family: Georgia, serif;
+  font-family: "Playfair Display", serif;
   font-size: clamp(30px, 5vw, 42px);
   margin: 6px 0 10px;
 }
@@ -285,29 +344,37 @@
 
 .public-award-card {
   text-align: left;
-  border: 1px solid #e4dfd3;
+  border: none;
+  border-top: 3px solid #d4a017;
   border-radius: 16px;
   background: white;
   padding: 25px 22px;
   cursor: pointer;
-  transition: 0.2s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
   width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .public-award-card:hover {
-  border-color: #b28a21;
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.07);
+  transform: scale(1.03);
+  box-shadow: 0 16px 40px rgba(26, 77, 46, 0.18);
+  outline: 2px solid #d4a017;
 }
 
 .award-card-icon {
-  display: block;
-  font-size: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f5edd8;
   margin-bottom: 12px;
+  color: #1a4d2e;
 }
 
 .public-award-card h3 {
-  font-family: Georgia, serif;
+  font-family: "Playfair Display", serif;
   font-size: 19px;
   margin: 0 0 8px;
   color: #171717;
@@ -330,8 +397,17 @@
 .public-award-status .status-open {
   padding: 5px 9px;
   border-radius: 20px;
-  background: #ecfdf3;
-  color: #027a48;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.public-award-status .status-voted {
+  padding: 5px 9px;
+  border-radius: 20px;
+  background: #fef9c3;
+  color: #854d0e;
   font-size: 11px;
   font-weight: 800;
 }
@@ -374,7 +450,7 @@
 .awards-back-btn {
   border: none;
   background: none;
-  color: #a27b18;
+  color: #d4a017;
   font: inherit;
   font-weight: 700;
   font-size: 14px;
@@ -392,7 +468,7 @@
 }
 
 .awards-action-page h2 {
-  font-family: Georgia, serif;
+  font-family: "Playfair Display", serif;
   font-size: clamp(28px, 5vw, 40px);
   margin: 6px 0 12px;
 }
@@ -428,8 +504,8 @@
 }
 
 .nominate-search-box input:focus {
-  border-color: #b28a21;
-  box-shadow: 0 0 0 3px rgba(178,138,33,0.12);
+  border-color: #d4a017;
+  box-shadow: 0 0 0 3px rgba(212,160,23,0.12);
 }
 
 .nominate-clear-btn {
@@ -477,11 +553,11 @@
 
 .nominate-row.selected {
   background: #fef8e7;
-  border-left: 3px solid #b28a21;
+  border-left: 3px solid #d4a017;
 }
 
 .nominate-row input[type="radio"] {
-  accent-color: #a27b18;
+  accent-color: #1a4d2e;
   width: 18px;
   height: 18px;
   flex-shrink: 0;
@@ -500,7 +576,7 @@
 
 .nominate-row-info code {
   background: #f4f0e6;
-  color: #8a6310;
+  color: #1a4d2e;
   padding: 2px 7px;
   border-radius: 5px;
   font-size: 11px;
@@ -553,8 +629,8 @@
 }
 
 .nominate-reason-label textarea:focus {
-  border-color: #b28a21;
-  box-shadow: 0 0 0 3px rgba(178,138,33,0.12);
+  border-color: #d4a017;
+  box-shadow: 0 0 0 3px rgba(212,160,23,0.12);
 }
 
 /* ACTION FOOTER */
@@ -622,7 +698,7 @@
 
 .vote-row-info code {
   background: #f4f0e6;
-  color: #8a6310;
+  color: #1a4d2e;
   padding: 2px 8px;
   border-radius: 5px;
   font-size: 11px;
@@ -761,9 +837,9 @@
 
 .awards-form-field input:focus,
 .awards-form-field textarea:focus {
-  border-color: #b28a21;
+  border-color: #d4a017;
   background: white;
-  box-shadow: 0 0 0 3px rgba(178, 138, 33, 0.12);
+  box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.12);
 }
 
 .awards-form-field textarea {
@@ -778,7 +854,7 @@
 .awards-back-btn:focus-visible,
 .awards-back-link:focus-visible,
 .public-award-card:focus-visible {
-  outline: 3px solid #b28a21;
+  outline: 3px solid #d4a017;
   outline-offset: 3px;
 }
 
@@ -809,7 +885,7 @@
 
 .awards-spinner--dark {
   border-color: rgba(0, 0, 0, 0.12);
-  border-top-color: #b28a21;
+  border-top-color: #d4a017;
 }
 
 @keyframes awards-spin {
@@ -859,7 +935,7 @@
 }
 
 .vote-confirm-card h3 {
-  font-family: Georgia, serif;
+  font-family: "Playfair Display", serif;
   font-size: 22px;
   margin: 0 0 12px;
   color: #171717;
@@ -954,7 +1030,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #a27b18;
+  color: #d4a017;
   flex-shrink: 0;
 }
 
@@ -962,12 +1038,12 @@
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.14em;
-  color: #a27b18;
+  color: #d4a017;
   margin: 0 0 3px;
 }
 
 .result-card-header h3 {
-  font-family: Georgia, serif;
+  font-family: "Playfair Display", serif;
   font-size: 17px;
   margin: 0;
   color: #1a1a1a;
@@ -979,17 +1055,35 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  background: linear-gradient(135deg, #fffbe6 0%, #fff8d6 100%);
-  border: 1.5px solid #e8c84a;
+  background: linear-gradient(135deg, #1a4d2e 0%, #0d2b19 100%);
+  border: none;
   border-radius: 14px;
   padding: 16px 18px;
+  color: white;
 }
 
 .result-winner-crown {
-  color: #c9960a;
+  color: #d4a017;
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  animation: crown-bounce 1.2s ease 0.3s both;
+}
+
+@keyframes crown-bounce {
+  0%,
+  100%      { transform: translateY(0); }
+  16.6%     { transform: translateY(-6px); }
+  33.3%     { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+  66.6%     { transform: translateY(0); }
+  83.3%     { transform: translateY(-6px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-winner-crown {
+    animation: none;
+  }
 }
 
 .result-winner-info {
@@ -1001,14 +1095,15 @@
   font-size: 10px;
   font-weight: 900;
   letter-spacing: 0.14em;
-  color: #a27b18;
+  color: rgba(255, 255, 255, 0.7);
   margin: 0 0 2px;
 }
 
 .result-winner-name {
-  font-size: 16px;
+  font-family: "Playfair Display", serif;
+  font-size: 20px;
   font-weight: 800;
-  color: #1a1a1a;
+  color: #d4a017;
   margin: 0 0 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -1017,8 +1112,8 @@
 
 .result-winner-id {
   font-size: 11px;
-  background: #f5edd8;
-  color: #8a6310;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.7);
   padding: 2px 7px;
   border-radius: 5px;
 }
@@ -1032,13 +1127,13 @@
   display: block;
   font-size: 26px;
   font-weight: 900;
-  color: #b28a21;
+  color: #d4a017;
   line-height: 1;
 }
 
 .result-winner-votes span {
   font-size: 11px;
-  color: #a27b18;
+  color: rgba(255, 255, 255, 0.7);
   font-weight: 600;
 }
 
@@ -1095,9 +1190,9 @@
 
 .result-bar-fill {
   height: 100%;
-  background: #c9a84c;
+  background: #d4a017;
   border-radius: 3px;
-  transition: width 0.6s ease;
+  transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .result-runner-votes {
@@ -1133,5 +1228,146 @@
 
   .result-winner {
     flex-wrap: wrap;
+  }
+}
+
+/* ── Vote Success Checkmark ─────────────────────────────── */
+@keyframes vote-check-pop {
+  0%   { transform: scale(0.3); opacity: 0; }
+  60%  { transform: scale(1.1); opacity: 1; }
+  80%  { transform: scale(1.0); opacity: 1; }
+  100% { transform: scale(1.0); opacity: 0; }
+}
+
+.vote-success-checkmark {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  font-size: 120px;
+  color: #1a4d2e;
+  animation: vote-check-pop 3.1s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vote-success-checkmark {
+    animation: none;
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .vote-success-checkmark {
+    font-size: 80px;
+  }
+}
+
+/* ── Voting Progress Tracker ────────────────────────────── */
+.voting-progress {
+  margin-top: 28px;
+  padding: 20px 24px;
+  background: white;
+  border-radius: 14px;
+  border: 1px solid #e5e0d3;
+}
+
+.voting-progress-label {
+  font-size: 14px;
+  color: #555;
+  margin: 0 0 10px;
+}
+
+.voting-progress-track {
+  height: 8px;
+  background: #f0ece4;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.voting-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #1a4d2e, #d4a017);
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+.voting-progress-msg {
+  font-size: 13px;
+  color: #888;
+  margin: 8px 0 0;
+}
+
+.voting-progress-msg--done {
+  color: #166534;
+  font-weight: 700;
+}
+
+@media (max-width: 560px) {
+  .voting-progress {
+    padding: 16px;
+  }
+}
+
+/* ── Skeleton Loading ───────────────────────────────────── */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.skeleton-card {
+  height: 180px;
+  border-radius: 16px;
+  background: linear-gradient(
+    90deg,
+    #f0ece4 25%,
+    #e8e4dc 50%,
+    #f0ece4 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-card {
+    animation: none;
+    background: #f0ece4;
+  }
+}
+
+@media (max-width: 560px) {
+  .skeleton-card {
+    height: 140px;
+  }
+}
+
+/* ── Step Transition ────────────────────────────────────── */
+@keyframes step-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.member-verification-card,
+.awards-action-page {
+  animation: step-fade-in 0.35s ease both;
+}
+
+.browse-step-wrapper {
+  animation: step-fade-in 0.35s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .member-verification-card,
+  .awards-action-page,
+  .browse-step-wrapper {
+    animation: none;
   }
 }
