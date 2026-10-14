@@ -87,16 +87,14 @@ INSERT INTO departments (name, code) VALUES
   ('Technical',         'TECH')
 ON CONFLICT (code) DO NOTHING;
 
--- ── 6. SEED — DEMO HOUSES ─────────────────────────────────────
--- Replace with actual KAWSEC house names before going live.
+-- ── 6. SEED — KAWSEC HOUSES ──────────────────────────────────
+-- The four official houses of Nkawkaw Senior High School (KAWSEC).
 
 INSERT INTO houses (name, code, colour) VALUES
-  ('Nkrumah',   'NKR', '#1a4d2e'),
-  ('Aggrey',    'AGG', '#2d7a4f'),
-  ('Danquah',   'DAN', '#0f2d1a'),
-  ('Busia',     'BUS', '#3d8f5f'),
-  ('Olympio',   'OLY', '#4aaa72'),
-  ('Luthuli',   'LUT', '#1e5c35')
+  ('Akuamoah', 'AKU', '#1a4d2e'),
+  ('Opaniman', 'OPA', '#2d7a4f'),
+  ('Akroko',   'AKR', '#0f2d1a'),
+  ('Tokoli',   'TOK', '#3d8f5f')
 ON CONFLICT (code) DO NOTHING;
 
 -- =============================================================

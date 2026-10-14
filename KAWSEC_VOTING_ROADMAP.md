@@ -340,7 +340,7 @@ published_results (id, election_id, position_id, candidate_id, vote_count,
 ## 9. Open Decisions Still Needed from School
 
 - [ ] Exact Student ID format (e.g. `KAWSEC/2024/001` or `24-SCI-A-001`)
-- [ ] Exact house names at KAWSEC
+- [x] Exact house names at KAWSEC — **Akuamoah, Opaniman, Akroko, Tokoli**
 - [ ] Exact department and class structure
 - [ ] Whether Form 1, 2 and 3 students all vote, or only specific year groups
 - [ ] Whether students vote from any device or only supervised ICT lab stations

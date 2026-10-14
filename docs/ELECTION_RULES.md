@@ -22,7 +22,15 @@ Every role has a **Male** and **Female** position — 7 roles × 2 = **14 ballot
 ## 2. Voting Eligibility
 
 - **School-wide positions (rows 1–3, 5–7):** Every active registered student votes.
-- **House Captain (row 4):** Only students belonging to that specific house vote for their house's captain positions. A student in Nkrumah House only votes for Nkrumah House Captain (Male) and Nkrumah House Captain (Female).
+- **House Captain (row 4):** Only students belonging to that specific house vote for their house's captain positions. A student in Akuamoah House only votes for Akuamoah House Captain (Male) and Akuamoah House Captain (Female).
+
+### KAWSEC Houses
+| # | House Name | Code |
+|---|---|---|
+| 1 | Akuamoah | AKU |
+| 2 | Opaniman | OPA |
+| 3 | Akroko   | AKR |
+| 4 | Tokoli   | TOK |
 
 ## 3. Voting Method
 
@@ -63,7 +71,7 @@ Every role has a **Male** and **Female** position — 7 roles × 2 = **14 ballot
 ## Open Items (Still Needed from School)
 
 - [ ] Exact Student ID format
-- [ ] Actual house names at KAWSEC
+- [x] Actual house names at KAWSEC — **Akuamoah, Opaniman, Akroko, Tokoli**
 - [ ] Actual department and class names
 - [ ] Whether Form 1, 2, and 3 all vote or only specific year groups
 - [ ] Whether voting is restricted to supervised ICT lab only or any device

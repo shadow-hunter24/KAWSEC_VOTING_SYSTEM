@@ -18,7 +18,7 @@ Run these SQL files **in order** in Supabase → SQL Editor.
 ## Before going live
 
 - [ ] Delete all demo seed data (`DELETE FROM students WHERE student_id_number LIKE 'KAWSEC/2024/%'`)
-- [ ] Replace demo house names with actual KAWSEC house names
+- [ ] Replace demo house names with actual KAWSEC house names — **DONE: Akuamoah (AKU), Opaniman (OPA), Akroko (AKR), Tokoli (TOK)**
 - [ ] Replace demo departments with actual KAWSEC departments
 - [ ] Import real student register via the bulk import tool (Phase 3)
 - [ ] Verify RLS policies with the Supabase policy tester

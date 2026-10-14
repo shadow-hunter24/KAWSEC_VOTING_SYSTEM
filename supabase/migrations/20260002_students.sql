@@ -148,8 +148,8 @@ BEGIN
   -- Resolve IDs
   SELECT id INTO v_sci_class  FROM classes WHERE name = 'Science 3A' LIMIT 1;
   SELECT id INTO v_arts_class FROM classes WHERE name = 'Arts 3B'    LIMIT 1;
-  SELECT id INTO v_nkr_house  FROM houses  WHERE code = 'NKR'        LIMIT 1;
-  SELECT id INTO v_agg_house  FROM houses  WHERE code = 'AGG'        LIMIT 1;
+  SELECT id INTO v_nkr_house  FROM houses  WHERE code = 'AKU'        LIMIT 1;
+  SELECT id INTO v_agg_house  FROM houses  WHERE code = 'OPA'        LIMIT 1;
 
   -- Insert demo students (FICTITIOUS names only)
   IF v_sci_class IS NOT NULL AND v_nkr_house IS NOT NULL THEN
