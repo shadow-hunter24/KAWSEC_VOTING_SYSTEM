@@ -302,7 +302,7 @@ export default function Register() {
     if (existing) {
       setLoading(false);
       setSubmitError(
-        "A registration already exists for this phone number. If you believe this is an error, please contact the reunion committee."
+        "A registration already exists for this phone number. If you believe this is an error, please contact the KAWSEC committee."
       );
       return;
     }
@@ -336,7 +336,7 @@ export default function Register() {
       const code = registrationError.code;
       if (code === "23505") {
         setSubmitError(
-          "A registration with this phone number or email already exists. Please check your details or contact the reunion committee."
+          "A registration with this phone number or email already exists. Please check your details or contact the KAWSEC committee."
         );
       } else if (code === "42501") {
         setSubmitError("Submission was blocked due to a permissions issue. Please try again.");
@@ -556,7 +556,7 @@ export default function Register() {
                   aria-invalid={!!err("phone")}
                 />
                 <FieldHint id="phone-hint">
-                  Digits only. Used only for reunion communication.
+                  Digits only. Used only for KAWSEC communication.
                 </FieldHint>
                 <FieldError id="phone-error" message={err("phone")} />
               </div>
@@ -897,7 +897,7 @@ export default function Register() {
             </h2>
 
             <p className="consent-description">
-              We collect this information solely to organise the Class of 2021 reunion.
+              We collect this information solely to organise the KAWSEC Awards Night.
               It will never be sold or shared with third parties.
             </p>
 
@@ -915,10 +915,10 @@ export default function Register() {
               <div id="consent-detail" className="consent-detail" role="region" aria-label="Consent details">
                 <ul>
                   <li>Your <strong>name and nickname</strong> may appear on a printed reunion programme and name badge.</li>
-                  <li>Your <strong>phone number</strong> will be used only for reunion communication via WhatsApp.</li>
+                  <li>Your <strong>phone number</strong> will be used only for KAWSEC communication via WhatsApp.</li>
                   <li>Your <strong>occupation and location</strong> may appear in a class directory shared only among verified classmates.</li>
                   <li>Your <strong>favourite memory</strong> will only be published with your explicit permission.</li>
-                  <li>You may request deletion of your data at any time by contacting the reunion committee.</li>
+                  <li>You may request deletion of your data at any time by contacting the KAWSEC committee.</li>
                 </ul>
               </div>
             )}
@@ -937,7 +937,7 @@ export default function Register() {
                 aria-invalid={!!err("privacy_consent")}
               />
               <span>
-                I consent to my information being used for organising the Class of 2021 reunion
+                I consent to my information being used for organising the KAWSEC Awards Night
                 and related class activities. I understand my data will not be publicly displayed
                 without my permission, and I may withdraw consent at any time.{" "}
                 <span className="required-star" aria-hidden="true">*</span>

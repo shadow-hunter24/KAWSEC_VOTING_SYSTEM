@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "./lib/supabase";
 import { GraduationCap, Handshake, Camera, Trophy, Briefcase, ImageIcon, Menu, X } from "lucide-react";
@@ -52,6 +52,7 @@ function pad(n) {
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navRef = useRef(null);
 
   // ── Site settings from DB ─────────────────────────────────
   const [cfg, setCfg]             = useState(FALLBACK);
@@ -92,7 +93,7 @@ function App() {
   // Glassmorphism navbar scroll listener
   useEffect(() => {
     function handleScroll() {
-      const nav = document.querySelector(".navbar");
+      const nav = navRef.current;
       if (!nav) return;
       if (window.scrollY > 50) {
         nav.classList.add("scrolled");
@@ -112,7 +113,7 @@ function App() {
       </a>
 
       {/* Navigation */}
-      <nav className="navbar" aria-label="Main navigation">
+      <nav className="navbar" ref={navRef} aria-label="Main navigation">
         <div className="logo" aria-label="KAWSEC Nkawkaw SHS">
           <span aria-hidden="true">KAWSEC</span>
           <small>NKAWKAW SHS</small>
@@ -351,8 +352,8 @@ function App() {
             </h2>
 
             <p>
-              Be part of the reunion. Register now and let's make the
-              5th anniversary one to remember.
+              Be part of the KAWSEC Awards Night. Register now and celebrate
+              the best among us.
             </p>
 
             <Link to="/register" className="primary-button">
@@ -381,7 +382,7 @@ function App() {
               <div aria-hidden="true"><Camera size={28} aria-hidden="true" /></div>
               <h3>Our Memories Will Live Here</h3>
               <p>
-                Approved memories from the Class of 2021 will appear here.
+                Approved memories from KAWSEC students will appear here.
               </p>
             </div>
           ) : (
