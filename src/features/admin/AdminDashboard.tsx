@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom';
-import { Upload, UserCheck, BarChart2, Users, Settings, FileText } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Upload, UserCheck, BarChart2, Users, Settings, FileText, LogOut } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 const C = {
   greenPrimary: '#1a4d2e', greenLight: '#e8f5ee',
@@ -16,6 +17,13 @@ const cards = [
 ];
 
 export default function AdminDashboard() {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  async function handleSignOut() {
+    await signOut();
+    navigate('/admin', { replace: true });
+  }
   return (
     <div style={{ minHeight: '100vh', backgroundColor: C.creamBg }}>
 
@@ -28,9 +36,19 @@ export default function AdminDashboard() {
               <p style={{ color: 'rgba(245,240,232,0.65)', fontSize: '11px' }}>KAWSEC Elections — Nkawkaw Senior High School</p>
             </div>
           </div>
-          <span style={{ fontSize: '12px', fontWeight: 700, padding: '6px 14px', borderRadius: '999px', backgroundColor: C.creamCard, color: C.greenPrimary }}>
-            IT Coordinator
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '12px', color: 'rgba(245,240,232,0.65)' }}>{user?.email}</span>
+            <span style={{ fontSize: '12px', fontWeight: 700, padding: '6px 14px', borderRadius: '999px', backgroundColor: C.creamCard, color: C.greenPrimary }}>
+              IT Coordinator
+            </span>
+            <button onClick={handleSignOut} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,240,232,0.7)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', padding: '6px 10px', borderRadius: '8px' }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(245,240,232,0.1)'; }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
+              aria-label="Sign out"
+            >
+              <LogOut size={14} /> Sign Out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -64,10 +82,10 @@ export default function AdminDashboard() {
         </div>
 
         <div style={{ marginTop: '40px', textAlign: 'center' }}>
-          <Link to="/" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 22px', borderRadius: '10px', border: `1.5px solid ${C.creamBorder}`, color: C.textMuted, fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = C.greenPrimary; e.currentTarget.style.color = C.greenPrimary; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = C.creamBorder; e.currentTarget.style.color = C.textMuted; }}
-          >← Sign Out &amp; Return Home</Link>
+          <button onClick={handleSignOut} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 22px', borderRadius: '10px', border: `1.5px solid ${C.creamBorder}`, color: C.textMuted, fontSize: '13px', fontWeight: 600, background: 'none', cursor: 'pointer' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.greenPrimary; (e.currentTarget as HTMLButtonElement).style.color = C.greenPrimary; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.creamBorder; (e.currentTarget as HTMLButtonElement).style.color = C.textMuted; }}
+          ><LogOut size={14} /> Sign Out</button>
         </div>
       </main>
     </div>
