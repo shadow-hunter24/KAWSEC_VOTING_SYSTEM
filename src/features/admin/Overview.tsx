@@ -49,6 +49,7 @@ export default function Overview() {
   // Stats
   const [totalStudents,   setTotalStudents]   = useState(0);
   const [activeStudents,  setActiveStudents]  = useState(0);
+  const [noHouseStudents, setNoHouseStudents] = useState(0);
   const [totalCredsToday, setTotalCredsToday] = useState(0);
   const [totalVoted,      setTotalVoted]      = useState(0);
   const [totalEligible,   setTotalEligible]   = useState(0);
@@ -82,6 +83,14 @@ export default function Overview() {
     ]);
     setTotalStudents(total ?? 0);
     setActiveStudents(activeCount ?? 0);
+
+    // Students with no house assigned (won't get house captain ballot)
+    const { count: noHouseCount } = await supabase
+      .from('students')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_active', true)
+      .is('house_id', null);
+    setNoHouseStudents(noHouseCount ?? 0);
 
     // Credentials generated today
     const todayStart = new Date();
@@ -211,6 +220,26 @@ export default function Overview() {
                     Switch election →
                   </Link>
                 )}
+              </div>
+            )}
+
+            {/* No-house warning */}
+            {noHouseStudents > 0 && (
+              <div style={{ display: 'flex', gap: '10px', padding: '12px 16px', borderRadius: '12px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', marginBottom: '20px' }}>
+                <AlertTriangle size={16} color="#b45309" style={{ flexShrink: 0, marginTop: '1px' }} />
+                <div>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: '#92400e' }}>
+                    {noHouseStudents} active student{noHouseStudents !== 1 ? 's have' : ' has'} no house assigned
+                  </p>
+                  <p style={{ fontSize: '12px', color: '#92400e', marginTop: '2px', lineHeight: 1.5 }}>
+                    These students will <strong>not receive a House Captain ballot</strong> and cannot vote for their house.
+                    Fix this in{' '}
+                    <Link to="/admin/students" style={{ color: '#92400e', fontWeight: 700 }}>
+                      Student Register
+                    </Link>
+                    {' '}before approving the election.
+                  </p>
+                </div>
               </div>
             )}
 
