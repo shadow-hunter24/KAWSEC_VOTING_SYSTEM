@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Trophy, Download, Clock } from 'lucide-react';
+import { Trophy, Medal, Clock, Download } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Election, PublishedResult } from '../../types';
 
@@ -9,64 +9,76 @@ const C = {
   creamBg: '#fffdf7', creamCard: '#f5f0e8', creamBorder: '#e8e0cc', textMuted: '#5a5a4a',
 };
 
-/* ── Individual result card ─────────────────────────────────── */
-function ResultCard({ position, results }: {
-  position: string;
-  results:  PublishedResult[];
-}) {
+// Rank metadata
+const RANK_META: Record<number, { label: string; colour: string; bg: string; border: string }> = {
+  1: { label: 'Main Prefect',   colour: C.greenPrimary, bg: C.greenLight,   border: C.greenPrimary + '30' },
+  2: { label: '1st Assistant',  colour: '#1e40af',      bg: '#dbeafe',       border: '#93c5fd'             },
+  3: { label: '2nd Assistant',  colour: '#7c3aed',      bg: '#ede9fe',       border: '#c4b5fd'             },
+  4: { label: '3rd Assistant',  colour: '#b45309',      bg: '#fef3c7',       border: '#fcd34d'             },
+};
+
+/* ── Position result card ────────────────────────────────────── */
+function PositionCard({ position, results }: { position: string; results: PublishedResult[] }) {
   const sorted     = [...results].sort((a, b) => a.rank - b.rank);
-  const winner     = sorted[0];
-  const runners    = sorted.slice(1);
   const totalVotes = sorted.reduce((s, r) => s + r.vote_count, 0);
-  const hasTie     = winner?.tie_flag;
 
   return (
     <div style={{ backgroundColor: '#fff', borderRadius: '16px', border: `1px solid ${C.creamBorder}`, overflow: 'hidden', breakInside: 'avoid' }}>
-      {/* Header */}
-      <div style={{ padding: '14px 18px', borderBottom: `1px solid ${C.creamBorder}`, backgroundColor: C.creamCard }}>
-        <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.5px', color: C.textMuted, marginBottom: '2px' }}>
-          Prefect Position
-        </p>
+      {/* Position header */}
+      <div style={{ padding: '12px 18px', borderBottom: `1px solid ${C.creamBorder}`, backgroundColor: C.creamCard }}>
+        <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1.5px', color: C.textMuted, marginBottom: '2px' }}>Prefect Position</p>
         <h3 style={{ fontWeight: 700, fontSize: '14px', color: C.greenPrimary }}>{position}</h3>
+        <p style={{ fontSize: '11px', color: C.textMuted, marginTop: '2px' }}>{totalVotes} total votes · {sorted.length} ranked</p>
       </div>
 
-      <div style={{ padding: '16px 18px' }}>
-        {/* Winner */}
-        <div style={{ borderRadius: '12px', padding: '14px 16px', marginBottom: '10px', backgroundColor: C.greenLight, border: `1px solid ${C.greenPrimary}22` }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Trophy size={16} color={C.greenPrimary} aria-hidden="true" />
-              <span style={{ fontWeight: 700, fontSize: '15px', color: C.greenPrimary }}>{winner?.candidate_name}</span>
-              {hasTie && winner?.panel_decision && (
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '999px', backgroundColor: '#fef3c7', color: '#b45309' }}>Panel Decision</span>
-              )}
-            </div>
-            <span style={{ fontWeight: 800, fontSize: '14px', color: C.greenPrimary }}>{winner?.vote_count} votes</span>
-          </div>
-          <div style={{ height: '6px', borderRadius: '999px', backgroundColor: '#c8e6d0', overflow: 'hidden' }}>
-            <div style={{ height: '100%', borderRadius: '999px', backgroundColor: C.greenPrimary, width: totalVotes > 0 ? `${Math.round((winner.vote_count / totalVotes) * 100)}%` : '0%' }}
-              role="progressbar" aria-label={`${winner?.candidate_name}: ${winner?.vote_count} of ${totalVotes} votes`}
-              aria-valuenow={winner?.vote_count} aria-valuemin={0} aria-valuemax={totalVotes} />
-          </div>
-        </div>
+      {/* Ranked candidates */}
+      <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {sorted.map(r => {
+          const meta  = RANK_META[r.rank] ?? { label: `Rank ${r.rank}`, colour: C.textMuted, bg: C.creamCard, border: C.creamBorder };
+          const pct   = totalVotes > 0 ? Math.round((r.vote_count / totalVotes) * 100) : 0;
+          const isTop = r.rank === 1;
 
-        {/* Runners-up */}
-        {runners.map(r => {
-          const pct = totalVotes > 0 ? Math.round((r.vote_count / totalVotes) * 100) : 0;
           return (
-            <div key={r.candidate_id} style={{ borderRadius: '10px', padding: '12px 14px', marginBottom: '8px', backgroundColor: C.creamCard }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <span style={{ fontSize: '13px', color: C.textMuted }}>{r.candidate_name}</span>
-                <span style={{ fontSize: '12px', color: C.textMuted }}>{r.vote_count} ({pct}%)</span>
+            <div key={r.candidate_id} style={{
+              borderRadius: '12px', padding: '14px 16px',
+              backgroundColor: meta.bg,
+              border: `1px solid ${meta.border}`,
+            }}>
+              {/* Rank badge + name */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                <div style={{ flexShrink: 0 }}>
+                  {isTop
+                    ? <Trophy size={18} color={meta.colour} aria-hidden="true" />
+                    : <Medal size={18} color={meta.colour} aria-hidden="true" />}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 800, fontSize: '15px', color: meta.colour }}>{r.candidate_name}</span>
+                    {r.tie_flag && r.panel_decision && (
+                      <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '999px', backgroundColor: '#fef3c7', color: '#b45309' }}>Panel Decision</span>
+                    )}
+                  </div>
+                  <span style={{
+                    display: 'inline-block', marginTop: '3px',
+                    fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
+                    backgroundColor: '#fff', color: meta.colour, border: `1px solid ${meta.border}`,
+                  }}>{meta.label}</span>
+                </div>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: meta.colour, flexShrink: 0 }}>
+                  {r.vote_count} votes
+                </span>
               </div>
-              <div style={{ height: '4px', borderRadius: '999px', backgroundColor: C.creamBorder, overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: '999px', backgroundColor: '#a3b89c', width: `${pct}%` }} />
+
+              {/* Vote bar */}
+              <div style={{ height: '6px', borderRadius: '999px', backgroundColor: 'rgba(0,0,0,0.08)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: '999px', backgroundColor: meta.colour, width: `${pct}%`, transition: 'width 0.6s ease' }}
+                  role="progressbar" aria-valuenow={r.vote_count} aria-valuemin={0} aria-valuemax={totalVotes}
+                  aria-label={`${r.candidate_name}: ${r.vote_count} of ${totalVotes} votes`} />
               </div>
+              <p style={{ fontSize: '11px', color: meta.colour, marginTop: '4px', textAlign: 'right', opacity: 0.8 }}>{pct}%</p>
             </div>
           );
         })}
-
-        <p style={{ fontSize: '11px', color: C.textMuted, textAlign: 'right', marginTop: '6px' }}>{totalVotes} votes cast</p>
       </div>
     </div>
   );
@@ -74,17 +86,16 @@ function ResultCard({ position, results }: {
 
 /* ── Main page ───────────────────────────────────────────────── */
 export default function ResultsPage() {
-  const [elections,  setElections]  = useState<Election[]>([]);
-  const [activeId,   setActiveId]   = useState('');
-  const [results,    setResults]    = useState<PublishedResult[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [noResults,  setNoResults]  = useState(false);
+  const [elections,      setElections]      = useState<Election[]>([]);
+  const [activeId,       setActiveId]       = useState('');
+  const [results,        setResults]        = useState<PublishedResult[]>([]);
+  const [loading,        setLoading]        = useState(true);
+  const [noResults,      setNoResults]      = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    supabase.from('elections').select('id, title, status, voting_closes_at')
-      .eq('status', 'published')
-      .order('created_at', { ascending: false })
+    supabase.from('elections').select('id, title, status, updated_at')
+      .eq('status', 'published').order('created_at', { ascending: false })
       .then(({ data }) => {
         const list = (data as Election[]) ?? [];
         setElections(list);
@@ -98,24 +109,22 @@ export default function ResultsPage() {
     setLoading(true);
     supabase.from('published_results').select('*')
       .eq('election_id', activeId).order('rank')
-      .then(({ data }) => {
-        setResults((data as PublishedResult[]) ?? []);
-        setLoading(false);
-      });
+      .then(({ data }) => { setResults((data as PublishedResult[]) ?? []); setLoading(false); });
   }, [activeId]);
 
-  // Group results by position
+  // Group by position title
   const grouped: Record<string, PublishedResult[]> = {};
   results.forEach(r => {
     if (!grouped[r.position_title]) grouped[r.position_title] = [];
     grouped[r.position_title].push(r);
   });
 
-  // Group positions by role_group (strip Male/Female for section headers)
+  // Group positions by role (strip M/F for section headers)
   function getRoleGroup(title: string) {
     return title
       .replace(/ \(Male\)| \(Female\)/, '')
       .replace(/Head Boy|Head Girl/, 'School Prefect')
+      .replace(/ House Captain.*/, ' House Captain')
       .trim();
   }
 
@@ -126,21 +135,14 @@ export default function ResultsPage() {
     roleGroups[rg].push(pos);
   });
 
-  function handlePrint() {
-    window.print();
-  }
-
   const activeElection = elections.find(e => e.id === activeId);
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: C.creamBg }}>
-
-      {/* Print styles */}
       <style>{`
         @media print {
           header, .no-print { display: none !important; }
           body { background: white !important; }
-          .print-area { padding: 0 !important; }
         }
       `}</style>
 
@@ -156,12 +158,9 @@ export default function ResultsPage() {
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             {results.length > 0 && (
-              <button onClick={handlePrint} style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                padding: '8px 16px', borderRadius: '8px', border: 'none',
-                backgroundColor: C.creamCard, color: C.greenPrimary,
-                fontSize: '13px', fontWeight: 700, cursor: 'pointer',
-              }}><Download size={14} /> Export / Print PDF</button>
+              <button onClick={() => window.print()} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: C.creamCard, color: C.greenPrimary, fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}>
+                <Download size={14} /> Export / Print PDF
+              </button>
             )}
             <Link to="/" style={{ fontSize: '13px', color: 'rgba(245,240,232,0.7)', textDecoration: 'none' }}>← Home</Link>
           </div>
@@ -189,44 +188,56 @@ export default function ResultsPage() {
             </div>
             <h2 style={{ fontSize: '20px', fontWeight: 700, color: C.greenPrimary, marginBottom: '10px' }}>Results Not Yet Published</h2>
             <p style={{ fontSize: '14px', color: C.textMuted, maxWidth: '380px', margin: '0 auto', lineHeight: 1.7 }}>
-              Results will appear here once the IT Coordinator has reviewed, verified, and officially published them after voting closes.
+              Results will appear here once the IT Coordinator has verified and officially published them after voting closes.
             </p>
           </div>
         )}
 
-        {loading && !noResults && (
-          <p style={{ textAlign: 'center', color: C.textMuted, padding: '48px' }}>Loading results…</p>
-        )}
+        {loading && !noResults && <p style={{ textAlign: 'center', color: C.textMuted, padding: '48px' }}>Loading results…</p>}
 
         {/* Published results */}
         {!loading && !noResults && results.length > 0 && (
-          <div ref={printRef} className="print-area">
+          <div ref={printRef}>
             {/* Print header */}
-            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-              <img src="/logo.png" alt="KAWSEC" width={64} height={64} style={{ display: 'block', margin: '0 auto 12px', objectFit: 'contain' }} />
-              <h2 style={{ fontWeight: 800, fontSize: '22px', color: C.greenPrimary }}>{activeElection?.title}</h2>
-              <p style={{ fontSize: '13px', color: C.textMuted }}>
-                Official Results · Published {activeElection ? new Date(activeElection.updated_at ?? '').toLocaleDateString() : ''}
+            <div style={{ textAlign: 'center', marginBottom: '36px' }}>
+              <img src="/logo.png" alt="KAWSEC" width={72} height={72} style={{ display: 'block', margin: '0 auto 14px', objectFit: 'contain' }} />
+              <h2 style={{ fontWeight: 800, fontSize: '24px', color: C.greenPrimary }}>{activeElection?.title}</h2>
+              <p style={{ fontSize: '13px', color: C.textMuted, marginTop: '4px' }}>
+                Official Results · Published {activeElection?.updated_at ? new Date(activeElection.updated_at).toLocaleDateString('en-GH', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}
               </p>
-              <div style={{ width: '60px', height: '3px', backgroundColor: C.greenPrimary, margin: '14px auto 0', borderRadius: '2px' }} />
+
+              {/* Legend */}
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '16px' }}>
+                {[1,2,3].map(rank => {
+                  const m = RANK_META[rank];
+                  return (
+                    <div key={rank} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 12px', borderRadius: '999px', backgroundColor: m.bg, border: `1px solid ${m.border}` }}>
+                      {rank === 1 ? <Trophy size={13} color={m.colour} /> : <Medal size={13} color={m.colour} />}
+                      <span style={{ fontSize: '12px', fontWeight: 700, color: m.colour }}>{m.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div style={{ width: '60px', height: '3px', backgroundColor: C.greenPrimary, margin: '16px auto 0', borderRadius: '2px' }} />
             </div>
 
             {/* Grouped by role */}
             {Object.entries(roleGroups).map(([roleGroup, positions]) => (
-              <div key={roleGroup} style={{ marginBottom: '40px' }}>
-                <h3 style={{ fontWeight: 800, fontSize: '16px', color: C.greenPrimary, marginBottom: '14px', paddingBottom: '8px', borderBottom: `2px solid ${C.creamBorder}` }}>
+              <div key={roleGroup} style={{ marginBottom: '44px' }}>
+                <h3 style={{ fontWeight: 800, fontSize: '17px', color: C.greenPrimary, marginBottom: '16px', paddingBottom: '8px', borderBottom: `2px solid ${C.creamBorder}` }}>
                   {roleGroup}
                 </h3>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '16px' }}>
                   {positions.map(pos => (
-                    <ResultCard key={pos} position={pos} results={grouped[pos]} />
+                    <PositionCard key={pos} position={pos} results={grouped[pos]} />
                   ))}
                 </div>
               </div>
             ))}
 
-            <p style={{ fontSize: '11px', color: C.textMuted, textAlign: 'center', marginTop: '24px' }}>
-              Official results published by the KAWSEC IT Coordinator · Nkawkaw Senior High School · © 2026
+            <p style={{ fontSize: '11px', color: C.textMuted, textAlign: 'center', marginTop: '32px' }}>
+              Official results published by KAWSEC IT Coordinator · Nkawkaw Senior High School · © 2026
             </p>
           </div>
         )}
