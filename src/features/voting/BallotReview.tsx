@@ -9,8 +9,8 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ChevronLeft, AlertTriangle, User } from 'lucide-react';
-import type { BallotAuthState } from './BallotFlow';
-import type { PositionWithCandidates } from './BallotFlow';
+import type { BallotAuthState, PositionWithCandidates } from './BallotFlow';
+import { useVotingSession } from '../../contexts/VotingSessionContext';
 
 // Re-export the type so BallotFlow can import it
 export type { PositionWithCandidates };
@@ -38,6 +38,7 @@ export default function BallotReview() {
   const navigate  = useNavigate();
   const location  = useLocation();
   const state     = location.state as ReviewState | null;
+  const { markVoted } = useVotingSession();
 
   const [submitting, setSubmitting] = useState(false);
   const [error,      setError]      = useState('');
@@ -90,7 +91,9 @@ export default function BallotReview() {
         return;
       }
 
-      // Navigate to completion — non-revealing (no candidate names)
+      // Mark voted — stops the 5-minute countdown
+      markVoted();
+
       navigate('/vote/complete', {
         state: { full_name, ballot_count: data.ballot_count, election_id },
         replace: true,

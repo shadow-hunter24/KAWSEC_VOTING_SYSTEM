@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { ChevronRight, CheckCircle, User } from 'lucide-react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { ChevronRight, CheckCircle, User, Clock, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useVotingSession } from '../../contexts/VotingSessionContext';
 
 const C = {
   greenPrimary: '#1a4d2e', greenDark: '#0f2d1a', greenLight: '#e8f5ee',
@@ -22,6 +23,11 @@ interface StudentInfo {
 
 export default function StudentLogin() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { startSession } = useVotingSession();
+
+  // Show expiry banner if redirected here after timeout
+  const wasExpired = (location.state as { expired?: boolean } | null)?.expired === true;
 
   const [step,        setStep]        = useState<'id' | 'confirm' | 'credential'>('id');
   const [studentId,   setStudentId]   = useState('');
@@ -177,6 +183,14 @@ export default function StudentLogin() {
         return;
       }
 
+      // Start the 5-minute session timer
+      startSession({
+        student_id:    data.student_id,
+        full_name:     data.full_name,
+        election_id:   electionId,
+        session_token: data.session_token,
+      });
+
       navigate('/vote/ballot', {
         state: {
           student_id:    data.student_id,
@@ -214,6 +228,23 @@ export default function StudentLogin() {
           </div>
 
           <div style={{ padding: '24px 32px 32px' }}>
+
+            {/* Session expired banner */}
+            {wasExpired && (
+              <div role="alert" style={{
+                marginBottom: '16px', padding: '12px 14px', borderRadius: '10px',
+                backgroundColor: '#fef3c7', border: '1px solid #fcd34d',
+                display: 'flex', gap: '8px', alignItems: 'flex-start',
+              }}>
+                <Clock size={15} color="#b45309" style={{ flexShrink: 0, marginTop: '1px' }} />
+                <div>
+                  <p style={{ fontSize: '13px', fontWeight: 700, color: '#92400e' }}>Session expired</p>
+                  <p style={{ fontSize: '12px', color: '#92400e', marginTop: '2px' }}>
+                    Your 5-minute voting window has ended. Please log in again to continue.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Step indicators */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}
