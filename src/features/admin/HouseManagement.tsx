@@ -267,15 +267,27 @@ export default function HouseManagement() {
 
   async function handleDelete(house: House): Promise<string | null> {
     if ((house.student_count ?? 0) > 0) {
-      setErr(`Cannot delete "${house.name}" — ${house.student_count} student${house.student_count !== 1 ? 's are' : ' is'} assigned to it. Reassign them first.`);
+      setErr(`Cannot delete "${house.name}" — ${house.student_count} student${house.student_count !== 1 ? 's are' : ' is'} assigned to it. Reassign them first in Student Register.`);
       return `${house.student_count} students are assigned to this house.`;
     }
+
+    // Also check if any election positions reference this house
+    const { count: posCount } = await supabase
+      .from('positions')
+      .select('*', { count: 'exact', head: true })
+      .eq('house_id', house.id);
+
+    if ((posCount ?? 0) > 0) {
+      setErr(`Cannot delete "${house.name}" — it is referenced by ${posCount} election position${posCount !== 1 ? 's' : ''}. Delete those elections first in Election Settings.`);
+      return `${posCount} election positions reference this house.`;
+    }
+
     if (!window.confirm(`Delete house "${house.name}" (${house.code})?`)) return null;
 
     const { error } = await supabase.from('houses').delete().eq('id', house.id);
     if (error) {
       const msg = error.code === '23503'
-        ? `Cannot delete "${house.name}" — students are assigned to it.`
+        ? `Cannot delete "${house.name}" — it is still referenced by other records. Check Election Settings and Student Register first.`
         : error.message;
       setErr(msg); return msg;
     }

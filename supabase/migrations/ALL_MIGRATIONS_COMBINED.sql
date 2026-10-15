@@ -1,5 +1,9 @@
-﻿-- KAWSEC VOTING SYSTEM -- All Migrations
+﻿-- KAWSEC VOTING SYSTEM -- All Migrations (0001-0010)
+-- Generated: 2026-10-15
+
+-- ========================================
 -- FILE: 20260001_school_structure.sql
+-- ========================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0001
 -- School Structure: departments, classes, houses
@@ -103,7 +107,9 @@ ON CONFLICT (code) DO NOTHING;
 -- DONE. Tables: departments, classes, houses
 -- =============================================================
 
+-- ========================================
 -- FILE: 20260002_students.sql
+-- ========================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0002
 -- Students: student register + credential verifiers
@@ -283,7 +289,9 @@ END $$;
 -- IMPORTANT: Delete all demo data before any real election.
 -- =============================================================
 
+-- ========================================
 -- FILE: 20260003_elections.sql
+-- ========================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0003
 -- Elections: lifecycle, positions, candidates
@@ -495,7 +503,9 @@ END $$;
 -- Status = 'draft' â€” safe, no live voting possible.
 -- =============================================================
 
+-- ========================================
 -- FILE: 20260004_voting.sql
+-- ========================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0004
 -- Voting: entitlements, ballots, audit log, published results
@@ -739,7 +749,9 @@ $$;
 -- - Never expose service-role key to the browser client
 -- =============================================================
 
+-- ========================================
 -- FILE: 20260005_cast_ballot_rpc.sql
+-- ========================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0005
 -- Atomic ballot transaction RPC
@@ -834,7 +846,9 @@ REVOKE ALL ON FUNCTION cast_ballot_transaction FROM authenticated;
 -- Called only by the cast-ballot Edge Function.
 -- =============================================================
 
+-- ========================================
 -- FILE: 20260006_admin_rpcs.sql
+-- ========================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0006
 -- Admin RPCs: generate entitlements, publish results
@@ -1029,7 +1043,9 @@ GRANT EXECUTE ON FUNCTION publish_election_results      TO authenticated;
 --                  set_election_status, publish_election_results
 -- =============================================================
 
+-- ========================================
 -- FILE: 20260007_mock_election_seed.sql
+-- ========================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0007
 -- Mock election seed for Phase 6 testing
@@ -1187,7 +1203,9 @@ END $$;
 -- To clean up: DELETE FROM elections WHERE title LIKE '%MOCK%';
 -- =============================================================
 
+-- ========================================
 -- FILE: 20260008_departments_and_id_generation.sql
+-- ========================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0008
 -- Real departments, ID generation, year group restrictions
@@ -1426,6 +1444,140 @@ GRANT SELECT ON class_turnout_view TO authenticated;
 -- - generate_student_id() function: KAWSEC-[DEPT]-[YEAR]-[NNNN]
 -- - bulk_import_students() function: auto-IDs on import
 -- - class_turnout_view: per-class voting progress
+-- =============================================================
+
+-- ========================================
+-- FILE: 20260009_fix_houses.sql
+-- ========================================
+-- =============================================================
+-- KAWSEC VOTING SYSTEM â€” Migration 0009
+-- Replace placeholder houses with real KAWSEC houses
+-- =============================================================
+-- Safe to run even if old houses are already gone.
+-- Only deletes rows with the old placeholder codes.
+-- =============================================================
+
+-- Remove old placeholder houses (only if they still exist)
+DELETE FROM houses WHERE code IN ('NKR','AGG','DAN','BUS','OLY','LUT');
+
+-- Insert the 4 real KAWSEC houses
+INSERT INTO houses (name, code, colour) VALUES
+  ('Akuamoah', 'AKU', '#1a4d2e'),
+  ('Opaniman', 'OPA', '#2d7a4f'),
+  ('Akroko',   'AKR', '#0f2d1a'),
+  ('Tokoli',   'TOK', '#3d8f5f')
+ON CONFLICT (code) DO NOTHING;
+
+-- Verify
+SELECT name, code FROM houses ORDER BY name;
+
+-- =============================================================
+-- DONE. Houses: Akuamoah, Opaniman, Akroko, Tokoli
+-- =============================================================
+
+-- ========================================
+-- FILE: 20260010_gender_entitlements.sql
+-- ========================================
+-- =============================================================
+-- KAWSEC VOTING SYSTEM â€” Migration 0010
+-- Fix generate_voting_entitlements â€” gender filter for house
+-- captain positions only
+-- =============================================================
+-- KAWSEC rules:
+--   School-wide positions (Head Boy, Head Girl, Sports Prefect,
+--   Chaplain, Entertainment, Dining Hall, Compound):
+--     â†’ The WHOLE school votes for ALL of them.
+--       Males and females vote for both the male and female
+--       versions of each position.
+--
+--   House Captain positions (eligibility_scope = 'house'):
+--     â†’ Only students IN that house vote.
+--     â†’ Male students vote ONLY for the Male Captain.
+--     â†’ Female students vote ONLY for the Female Captain.
+--       Gender filter applies HERE only.
+-- =============================================================
+
+CREATE OR REPLACE FUNCTION generate_voting_entitlements(p_election_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  v_count   integer := 0;
+  v_pos     RECORD;
+  v_student RECORD;
+BEGIN
+  FOR v_pos IN
+    SELECT id, eligibility_scope, house_id, gender_scope
+    FROM   positions
+    WHERE  election_id = p_election_id
+  LOOP
+
+    -- â”€â”€ School-wide: ALL active students vote regardless of gender
+    IF v_pos.eligibility_scope = 'school_wide' THEN
+      FOR v_student IN
+        SELECT id FROM students WHERE is_active = true
+      LOOP
+        INSERT INTO voting_entitlements (election_id, student_id, position_id)
+        VALUES (p_election_id, v_student.id, v_pos.id)
+        ON CONFLICT (student_id, position_id) DO NOTHING;
+        v_count := v_count + 1;
+      END LOOP;
+
+    -- â”€â”€ House Captain: only house members, gender-matched
+    ELSIF v_pos.eligibility_scope = 'house' AND v_pos.house_id IS NOT NULL THEN
+      FOR v_student IN
+        SELECT id FROM students
+        WHERE  is_active = true
+          AND  house_id  = v_pos.house_id
+          AND (
+            v_pos.gender_scope = 'all'        -- safety fallback
+            OR gender = v_pos.gender_scope    -- maleâ†’male, femaleâ†’female
+          )
+      LOOP
+        INSERT INTO voting_entitlements (election_id, student_id, position_id)
+        VALUES (p_election_id, v_student.id, v_pos.id)
+        ON CONFLICT (student_id, position_id) DO NOTHING;
+        v_count := v_count + 1;
+      END LOOP;
+
+    END IF;
+  END LOOP;
+
+  -- Mark election as approved
+  UPDATE elections
+  SET    status      = 'approved',
+         approved_at = now(),
+         updated_at  = now()
+  WHERE  id = p_election_id
+    AND  status = 'draft';
+
+  RETURN jsonb_build_object(
+    'success',              true,
+    'entitlements_created', v_count
+  );
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION generate_voting_entitlements TO authenticated;
+
+-- =============================================================
+-- What each student gets:
+--
+-- Male student in Akuamoah:
+--   âœ“ All 12 school-wide positions (both M and F versions)
+--   âœ“ Akuamoah House Captain (Male)
+--   âœ— Akuamoah House Captain (Female)  â† gender filtered
+--   âœ— Any other house's captain positions â† house filtered
+--
+-- Female student in Akuamoah:
+--   âœ“ All 12 school-wide positions (both M and F versions)
+--   âœ“ Akuamoah House Captain (Female)
+--   âœ— Akuamoah House Captain (Male)    â† gender filtered
+--   âœ— Any other house's captain positions â† house filtered
+--
+-- Total ballot positions per student = 13
+--   (12 school-wide + 1 house captain)
 -- =============================================================
 
 
