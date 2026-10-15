@@ -13,6 +13,7 @@ import AdminDashboard           from '../features/admin/AdminDashboard';
 import AuditLog                 from '../features/admin/AuditLog';
 import ClassManagement          from '../features/admin/ClassManagement';
 import StudentImport            from '../features/students/StudentImport';
+import StudentManagement        from '../features/students/StudentManagement';
 import CandidateManagement      from '../features/candidates/CandidateManagement';
 import ElectionSettings         from '../features/elections/ElectionSettings';
 import TurnoutDashboard         from '../features/elections/TurnoutDashboard';
@@ -47,6 +48,7 @@ export default function Router() {
             {/* ── Protected admin pages ────────────────────── */}
             <Route path="/admin/dashboard"         element={<Guarded><AdminDashboard /></Guarded>} />
             <Route path="/admin/students/import"   element={<Guarded><StudentImport /></Guarded>} />
+          <Route path="/admin/students"          element={<Guarded><StudentManagement /></Guarded>} />
             <Route path="/admin/candidates"        element={<Guarded><CandidateManagement /></Guarded>} />
             <Route path="/admin/elections"         element={<Guarded><ElectionSettings /></Guarded>} />
             <Route path="/admin/turnout"           element={<Guarded><TurnoutDashboard /></Guarded>} />
