@@ -15,8 +15,8 @@ import CandidateManagement      from '../features/candidates/CandidateManagement
 import ElectionSettings         from '../features/elections/ElectionSettings';
 import TurnoutDashboard         from '../features/elections/TurnoutDashboard';
 import TallyAndPublish          from '../features/elections/TallyAndPublish';
+import ClassMonitor             from '../features/elections/ClassMonitor';
 
-// Wrap a page in ProtectedRoute so only authenticated IT Coordinators can access it
 function Guarded({ children }: { children: React.ReactNode }) {
   return <ProtectedRoute>{children}</ProtectedRoute>;
 }
@@ -36,7 +36,7 @@ export default function Router() {
           <Route path="/vote/review"   element={<BallotReview />} />
           <Route path="/vote/complete" element={<BallotComplete />} />
 
-          {/* ── Admin login (public — unauthenticated users land here) ── */}
+          {/* ── Admin login ─────────────────────────────────── */}
           <Route path="/admin"         element={<ITCoordinatorLogin />} />
           <Route path="/admin/login"   element={<ITCoordinatorLogin />} />
 
@@ -46,6 +46,7 @@ export default function Router() {
           <Route path="/admin/candidates"        element={<Guarded><CandidateManagement /></Guarded>} />
           <Route path="/admin/elections"         element={<Guarded><ElectionSettings /></Guarded>} />
           <Route path="/admin/turnout"           element={<Guarded><TurnoutDashboard /></Guarded>} />
+          <Route path="/admin/classes"           element={<Guarded><ClassMonitor /></Guarded>} />
           <Route path="/admin/tally/:electionId" element={<Guarded><TallyAndPublish /></Guarded>} />
           <Route path="/admin/audit"             element={<Guarded><AuditLog /></Guarded>} />
         </Routes>

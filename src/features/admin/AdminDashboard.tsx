@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Upload, UserCheck, BarChart2, Users, Settings, FileText, LogOut } from 'lucide-react';
+import { Upload, UserCheck, BarChart2, Users, Settings, FileText, LogOut, Monitor } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const C = {
@@ -8,12 +8,13 @@ const C = {
 };
 
 const cards = [
-  { Icon: Upload,    title: 'Import Students',      desc: 'Upload student register via CSV with preview and validation.',          link: '/admin/students/import',  ready: true,  phase: 'Phase 3' },
-  { Icon: UserCheck, title: 'Candidate Management', desc: 'Add candidates, upload photos/manifestos, approve or reject.',          link: '/admin/candidates',       ready: true,  phase: 'Phase 3' },
-  { Icon: Settings,  title: 'Election Settings',    desc: 'Create elections, set schedules, approve and open/close voting.',       link: '/admin/elections',        ready: true,  phase: 'Phase 5' },
-  { Icon: BarChart2, title: 'Turnout Dashboard',    desc: 'Live participation rates per position — no candidate totals shown.',     link: '/admin/turnout',          ready: true,  phase: 'Phase 5' },
-  { Icon: Users,     title: 'Tally & Publish',      desc: 'Review vote counts, resolve ties, publish official results.',           link: '/admin/tally',            ready: true,  phase: 'Phase 5' },
-  { Icon: FileText,  title: 'Audit Log',            desc: 'Tamper-evident log of all system actions, logins and admin changes.',   link: '/admin/audit',            ready: true,  phase: 'Phase 5' },
+  { Icon: Upload,    title: 'Import Students',      desc: 'Upload student register via CSV. IDs auto-generated per department.',              link: '/admin/students/import',  ready: true,  phase: 'Phase 3' },
+  { Icon: UserCheck, title: 'Candidate Management', desc: 'Add candidates, upload photos/manifestos, approve or reject.',                        link: '/admin/candidates',       ready: true,  phase: 'Phase 3' },
+  { Icon: Settings,  title: 'Election Settings',    desc: 'Create elections, set schedules, approve and open/close voting.',                      link: '/admin/elections',        ready: true,  phase: 'Phase 5' },
+  { Icon: BarChart2, title: 'Turnout Dashboard',    desc: 'Live participation rates per position — no candidate totals shown.',                   link: '/admin/turnout',          ready: true,  phase: 'Phase 5' },
+  { Icon: Monitor,   title: 'Class Monitor',        desc: 'Real-time per-class voting progress. Call classes to the ICT lab in order.',           link: '/admin/classes',          ready: true,  phase: 'Phase 6+' },
+  { Icon: Users,     title: 'Tally & Publish',      desc: 'Review vote counts, resolve ties, publish official results.',                          link: '/admin/tally',            ready: true,  phase: 'Phase 5' },
+  { Icon: FileText,  title: 'Audit Log',            desc: 'Tamper-evident log of all system actions, logins and admin changes.',                  link: '/admin/audit',            ready: true,  phase: 'Phase 5' },
 ];
 
 export default function AdminDashboard() {
