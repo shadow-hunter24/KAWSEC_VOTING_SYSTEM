@@ -89,14 +89,14 @@ BEGIN
 
   -- Safety: cap at 9999 per dept per year (upgrade to 5 digits if needed)
   IF v_next_seq > 9999 THEN
-    RAISE EXCEPTION 'Student ID sequence overflow for %%. Contact IT.', v_prefix;
+    RAISE EXCEPTION 'Student ID sequence overflow for %. Contact IT.', v_prefix;
   END IF;
 
   v_new_id := v_prefix || LPAD(v_next_seq::text, 4, '0');
 
   -- Verify uniqueness (shouldn't collide but double-check)
   IF EXISTS (SELECT 1 FROM students WHERE student_id_number = v_new_id) THEN
-    RAISE EXCEPTION 'Generated ID %% already exists. Re-run to get next sequence.', v_new_id;
+    RAISE EXCEPTION 'Generated ID % already exists. Re-run to get next sequence.', v_new_id;
   END IF;
 
   RETURN v_new_id;

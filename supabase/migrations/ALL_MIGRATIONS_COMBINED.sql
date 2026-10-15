@@ -1,11 +1,5 @@
-﻿-- KAWSEC VOTING SYSTEM — All Migrations Combined
--- Generated: 2026-10-15
--- Run once in Supabase SQL Editor
--- =========================================================================
-
--- =========================================================================
+﻿-- KAWSEC VOTING SYSTEM -- All Migrations
 -- FILE: 20260001_school_structure.sql
--- =========================================================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0001
 -- School Structure: departments, classes, houses
@@ -109,10 +103,7 @@ ON CONFLICT (code) DO NOTHING;
 -- DONE. Tables: departments, classes, houses
 -- =============================================================
 
-
--- =========================================================================
 -- FILE: 20260002_students.sql
--- =========================================================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0002
 -- Students: student register + credential verifiers
@@ -292,10 +283,7 @@ END $$;
 -- IMPORTANT: Delete all demo data before any real election.
 -- =============================================================
 
-
--- =========================================================================
 -- FILE: 20260003_elections.sql
--- =========================================================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0003
 -- Elections: lifecycle, positions, candidates
@@ -507,10 +495,7 @@ END $$;
 -- Status = 'draft' â€” safe, no live voting possible.
 -- =============================================================
 
-
--- =========================================================================
 -- FILE: 20260004_voting.sql
--- =========================================================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0004
 -- Voting: entitlements, ballots, audit log, published results
@@ -754,10 +739,7 @@ $$;
 -- - Never expose service-role key to the browser client
 -- =============================================================
 
-
--- =========================================================================
 -- FILE: 20260005_cast_ballot_rpc.sql
--- =========================================================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0005
 -- Atomic ballot transaction RPC
@@ -852,10 +834,7 @@ REVOKE ALL ON FUNCTION cast_ballot_transaction FROM authenticated;
 -- Called only by the cast-ballot Edge Function.
 -- =============================================================
 
-
--- =========================================================================
 -- FILE: 20260006_admin_rpcs.sql
--- =========================================================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0006
 -- Admin RPCs: generate entitlements, publish results
@@ -1050,10 +1029,7 @@ GRANT EXECUTE ON FUNCTION publish_election_results      TO authenticated;
 --                  set_election_status, publish_election_results
 -- =============================================================
 
-
--- =========================================================================
 -- FILE: 20260007_mock_election_seed.sql
--- =========================================================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0007
 -- Mock election seed for Phase 6 testing
@@ -1211,10 +1187,7 @@ END $$;
 -- To clean up: DELETE FROM elections WHERE title LIKE '%MOCK%';
 -- =============================================================
 
-
--- =========================================================================
 -- FILE: 20260008_departments_and_id_generation.sql
--- =========================================================================
 -- =============================================================
 -- KAWSEC VOTING SYSTEM â€” Migration 0008
 -- Real departments, ID generation, year group restrictions
@@ -1306,14 +1279,14 @@ BEGIN
 
   -- Safety: cap at 9999 per dept per year (upgrade to 5 digits if needed)
   IF v_next_seq > 9999 THEN
-    RAISE EXCEPTION 'Student ID sequence overflow for %%. Contact IT.', v_prefix;
+    RAISE EXCEPTION 'Student ID sequence overflow for %. Contact IT.', v_prefix;
   END IF;
 
   v_new_id := v_prefix || LPAD(v_next_seq::text, 4, '0');
 
   -- Verify uniqueness (shouldn't collide but double-check)
   IF EXISTS (SELECT 1 FROM students WHERE student_id_number = v_new_id) THEN
-    RAISE EXCEPTION 'Generated ID %% already exists. Re-run to get next sequence.', v_new_id;
+    RAISE EXCEPTION 'Generated ID % already exists. Re-run to get next sequence.', v_new_id;
   END IF;
 
   RETURN v_new_id;
