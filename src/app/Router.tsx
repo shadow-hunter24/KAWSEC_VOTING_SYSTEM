@@ -11,6 +11,7 @@ import ResultsPage              from '../features/results/ResultsPage';
 import ITCoordinatorLogin       from '../features/admin/ITCoordinatorLogin';
 import AdminDashboard           from '../features/admin/AdminDashboard';
 import AuditLog                 from '../features/admin/AuditLog';
+import Overview                 from '../features/admin/Overview';
 import ClassManagement          from '../features/admin/ClassManagement';
 import HouseManagement          from '../features/admin/HouseManagement';
 import StudentImport            from '../features/students/StudentImport';
@@ -48,6 +49,7 @@ export default function Router() {
 
             {/* ── Protected admin pages ────────────────────── */}
             <Route path="/admin/dashboard"         element={<Guarded><AdminDashboard /></Guarded>} />
+          <Route path="/admin/overview"          element={<Guarded><Overview /></Guarded>} />
             <Route path="/admin/students/import"   element={<Guarded><StudentImport /></Guarded>} />
           <Route path="/admin/students"          element={<Guarded><StudentManagement /></Guarded>} />
             <Route path="/admin/candidates"        element={<Guarded><CandidateManagement /></Guarded>} />

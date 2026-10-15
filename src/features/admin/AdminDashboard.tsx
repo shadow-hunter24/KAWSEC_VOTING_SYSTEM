@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Upload, UserCheck, BarChart2, Users, Settings, FileText, LogOut, Monitor, BookOpen, Home } from 'lucide-react';
+import { Upload, UserCheck, BarChart2, Users, Settings, FileText, LogOut, Monitor, BookOpen, Home, Eye } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const C = {
@@ -8,6 +8,7 @@ const C = {
 };
 
 const cards = [
+  { Icon: Eye,       title: 'Election Overview',    desc: 'Live stats: total students, credentials, votes cast, turnout %, winners per position.', link: '/admin/overview',         ready: true,  phase: 'Live'    },
   { Icon: Upload,    title: 'Import Students',      desc: 'Upload student register via CSV. IDs auto-generated per department.',              link: '/admin/students/import',  ready: true,  phase: 'Phase 3' },
   { Icon: Users,     title: 'Student Register',     desc: 'View, search, edit and manage all students. Change class, house, year group.',     link: '/admin/students',         ready: true,  phase: 'Phase 3' },
   { Icon: BookOpen,  title: 'Class Management',     desc: 'Add classes for each department and year group before importing students.',         link: '/admin/class-management', ready: true,  phase: 'Phase 3' },

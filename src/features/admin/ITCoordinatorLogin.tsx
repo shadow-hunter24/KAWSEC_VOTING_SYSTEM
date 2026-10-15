@@ -21,7 +21,7 @@ export default function ITCoordinatorLogin() {
   useEffect(() => {
     if (!loading && session) {
       const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
-      navigate(from ?? '/admin/dashboard', { replace: true });
+      navigate(from ?? '/admin/overview', { replace: true });
     }
   }, [session, loading, navigate, location]);
 
