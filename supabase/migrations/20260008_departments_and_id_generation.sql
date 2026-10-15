@@ -4,12 +4,24 @@
 -- =============================================================
 
 -- ── 1. UPDATE DEPARTMENTS to real KAWSEC departments ─────────
--- Delete placeholder departments and insert real ones.
--- WARNING: Only run this before importing real students.
--- If students already reference old departments, resolve FKs first.
+-- First remove demo data that references old departments/classes,
+-- then safely replace departments with real KAWSEC ones.
 
+-- Remove demo voting data (cascades to entitlements, ballots etc.)
+DELETE FROM voting_entitlements WHERE election_id IN (
+  SELECT id FROM elections WHERE title LIKE '%MOCK%' OR title LIKE '%demo%' OR title LIKE '%Demo%'
+);
+DELETE FROM elections WHERE title LIKE '%MOCK%' OR title LIKE '%demo%' OR title LIKE '%Demo%';
+DELETE FROM elections WHERE title = '2026 KAWSEC Prefect Elections' AND status = 'draft';
+
+-- Remove demo students (this unblocks class/department deletion)
+DELETE FROM students WHERE student_id_number LIKE 'KAWSEC/2024/%';
+
+-- Remove demo classes and departments (now safe)
+DELETE FROM classes     WHERE department_id IN (SELECT id FROM departments WHERE code IN ('SCI','ARTS','BIZ','VIS','HEC','TECH'));
 DELETE FROM departments WHERE code IN ('SCI','ARTS','BIZ','VIS','HEC','TECH');
 
+-- Insert the 6 real KAWSEC departments
 INSERT INTO departments (name, code) VALUES
   ('Science',           'SCI'),
   ('General Arts',      'ART'),
