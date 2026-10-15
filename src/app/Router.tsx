@@ -50,7 +50,8 @@ export default function Router() {
             <Route path="/admin/elections"         element={<Guarded><ElectionSettings /></Guarded>} />
             <Route path="/admin/turnout"           element={<Guarded><TurnoutDashboard /></Guarded>} />
             <Route path="/admin/classes"           element={<Guarded><ClassMonitor /></Guarded>} />
-            <Route path="/admin/tally/:electionId" element={<Guarded><TallyAndPublish /></Guarded>} />
+            <Route path="/admin/tally"               element={<Guarded><TallyAndPublish /></Guarded>} />
+          <Route path="/admin/tally/:electionId"  element={<Guarded><TallyAndPublish /></Guarded>} />
             <Route path="/admin/audit"             element={<Guarded><AuditLog /></Guarded>} />
           </Routes>
         </VotingSessionProvider>
