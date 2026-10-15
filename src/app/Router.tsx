@@ -12,6 +12,7 @@ import ITCoordinatorLogin       from '../features/admin/ITCoordinatorLogin';
 import AdminDashboard           from '../features/admin/AdminDashboard';
 import AuditLog                 from '../features/admin/AuditLog';
 import ClassManagement          from '../features/admin/ClassManagement';
+import HouseManagement          from '../features/admin/HouseManagement';
 import StudentImport            from '../features/students/StudentImport';
 import StudentManagement        from '../features/students/StudentManagement';
 import CandidateManagement      from '../features/candidates/CandidateManagement';
@@ -54,6 +55,7 @@ export default function Router() {
             <Route path="/admin/turnout"           element={<Guarded><TurnoutDashboard /></Guarded>} />
             <Route path="/admin/classes"           element={<Guarded><ClassMonitor /></Guarded>} />
           <Route path="/admin/class-management"  element={<Guarded><ClassManagement /></Guarded>} />
+          <Route path="/admin/houses"             element={<Guarded><HouseManagement /></Guarded>} />
             <Route path="/admin/tally"               element={<Guarded><TallyAndPublish /></Guarded>} />
           <Route path="/admin/tally/:electionId"  element={<Guarded><TallyAndPublish /></Guarded>} />
             <Route path="/admin/audit"             element={<Guarded><AuditLog /></Guarded>} />
