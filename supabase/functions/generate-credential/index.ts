@@ -153,13 +153,9 @@ serve(async (req) => {
     }, 400);
   }
 
-  const now = new Date();
-  if (election.voting_opens_at && new Date(election.voting_opens_at) > now) {
-    return json({ success: false, message: "Voting has not opened yet." }, 400);
-  }
-  if (election.voting_closes_at && new Date(election.voting_closes_at) < now) {
-    return json({ success: false, message: "Voting has closed." }, 400);
-  }
+  // Note: voting_opens_at / voting_closes_at are informational only.
+  // The admin manually controls the lifecycle via Open Voting / Close Voting.
+  // The status field above is the single source of truth.
 
   // ── 4. Check if already voted (all entitlements consumed) ───
   const { data: entitlements } = await supabase

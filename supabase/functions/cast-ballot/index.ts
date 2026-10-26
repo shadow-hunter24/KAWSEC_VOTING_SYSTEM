@@ -116,9 +116,10 @@ serve(async (req) => {
   if (!election || election.status !== "open") {
     return json({ success: false, message: "Voting is not currently open." }, 400);
   }
-  if (election.voting_closes_at && new Date(election.voting_closes_at) < new Date()) {
-    return json({ success: false, message: "Voting has closed." }, 400);
-  }
+
+  // Note: voting_closes_at is informational only.
+  // The admin manually closes voting via Close Voting button.
+  // The status field above is the single source of truth.
 
   // ── 4. Load student's entitlements ──────────────────────────
   const { data: entitlements } = await supabase
