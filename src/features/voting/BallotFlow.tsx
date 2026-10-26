@@ -148,20 +148,23 @@ export default function BallotFlow() {
     async function load() {
       setLoading(true); setError('');
 
-      // Check if ALL entitlements already consumed → already voted
-      const { data: entitlements } = await supabase
-        .from('voting_entitlements')
-        .select('position_id, consumed')
-        .eq('student_id', auth!.student_id)
-        .eq('election_id', auth!.election_id);
+      // Check entitlements via RPC (voting_entitlements is RLS-protected)
+      const { data: ballotStatus, error: bsErr } = await supabase.rpc('get_student_ballot_status', {
+        p_student_id: auth!.student_id,
+        p_election_id: auth!.election_id,
+      });
 
-      if (entitlements && entitlements.length > 0 && entitlements.every(e => e.consumed)) {
+      if (bsErr) { setError('Failed to load ballot. Please refresh.'); setLoading(false); return; }
+
+      const status = ballotStatus as { has_entitlements: boolean; all_consumed: boolean; position_ids: string[] };
+
+      if (status.has_entitlements && status.all_consumed) {
         setAlreadyVoted(true);
         setLoading(false);
         return;
       }
 
-      const unconsumed = (entitlements ?? []).filter(e => !e.consumed).map(e => e.position_id);
+      const unconsumed = status.position_ids ?? [];
       if (!unconsumed.length) {
         setError('No voting positions found. The election may have ended.');
         setLoading(false);
