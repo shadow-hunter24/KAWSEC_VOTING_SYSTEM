@@ -245,6 +245,14 @@ export default function ElectionSettings() {
                           onClick={async () => {
                             if (!window.confirm('Delete this election? This cannot be undone.')) return;
                             setActionErr(''); setActionMsg('');
+                            // Best-effort audit log — do not block delete if this fails
+                            try {
+                              await supabase.from('audit_events').insert({
+                                action: 'election.deleted',
+                                actor: 'IT Coordinator',
+                                details: { election_id: el.id, title: el.title, status: 'draft' },
+                              });
+                            } catch (_) { /* best-effort */ }
                             const { error } = await supabase.from('elections').delete().eq('id', el.id);
                             if (error) { setActionErr(error.message); }
                             else { setActionMsg('Election deleted.'); await loadElections(); }

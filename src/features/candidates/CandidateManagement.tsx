@@ -20,13 +20,17 @@ function CandidateCard({
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [withdrawReason, setWithdrawReason] = useState('');
 
-  const withdrawLocked = ['open', 'closed', 'verified', 'published'].includes(electionStatus);
+  const withdrawLocked = ['open', 'closed', 'verified', 'published', 'cancelled'].includes(electionStatus);
+
+  const displayStatus = (candidate.status === 'rejected' && candidate.rejected_reason?.startsWith('Withdrawn:'))
+    ? 'withdrawn'
+    : candidate.status;
 
   const statusColor: Record<string, string> = {
-    pending:  '#f59e0b', approved: C.greenPrimary, rejected: '#dc2626',
+    pending: '#f59e0b', approved: C.greenPrimary, rejected: '#dc2626', withdrawn: '#92400e',
   };
   const statusBg: Record<string, string> = {
-    pending: '#fef3c7', approved: C.greenLight, rejected: '#fef2f2',
+    pending: '#fef3c7', approved: C.greenLight, rejected: '#fef2f2', withdrawn: '#fef3c7',
   };
 
   return (
@@ -57,10 +61,10 @@ function CandidateCard({
             </div>
             <span style={{
               fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px',
-              backgroundColor: statusBg[candidate.status] ?? '#f3f4f6',
-              color: statusColor[candidate.status] ?? C.textMuted,
+              backgroundColor: statusBg[displayStatus] ?? '#f3f4f6',
+              color: statusColor[displayStatus] ?? C.textMuted,
               textTransform: 'capitalize', flexShrink: 0,
-            }}>{candidate.status}</span>
+            }}>{displayStatus}</span>
           </div>
 
           {/* Manifesto preview */}
@@ -75,8 +79,8 @@ function CandidateCard({
           )}
 
           {candidate.rejected_reason && (
-            <p style={{ fontSize: '12px', color: '#dc2626', marginTop: '6px' }}>
-              Rejected: {candidate.rejected_reason}
+            <p style={{ fontSize: '12px', color: displayStatus === 'withdrawn' ? '#92400e' : '#dc2626', marginTop: '6px' }}>
+              {displayStatus === 'withdrawn' ? 'Withdrawn' : 'Rejected'}: {candidate.rejected_reason.replace(/^Withdrawn: /, '')}
             </p>
           )}
         </div>
