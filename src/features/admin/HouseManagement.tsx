@@ -46,7 +46,7 @@ function HouseMemberPanel({ house }: { house: House }) {
       setLoading(false);
     }
     fetchMembers();
-  }, []);
+  }, [house.id]);
 
   return (
     <div style={{
@@ -322,10 +322,11 @@ export default function HouseManagement() {
     if (!houseData) { setLoading(false); return; }
 
     // Get student counts per house
-    const { data: counts } = await supabase
+    const { data: counts, error: countsError } = await supabase
       .from('students')
       .select('house_id')
       .in('house_id', houseData.map(h => h.id));
+    if (countsError) console.warn('Failed to load student counts:', countsError.message);
 
     const countMap: Record<string, number> = {};
     (counts ?? []).forEach(s => {
