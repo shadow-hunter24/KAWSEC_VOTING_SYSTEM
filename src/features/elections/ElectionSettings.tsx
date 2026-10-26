@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Calendar, ChevronRight, AlertTriangle, CheckCircle, Settings } from 'lucide-react';
+import { Plus, Calendar, ChevronRight, AlertTriangle, CheckCircle, Settings, Trash2, Ban } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Election } from '../../types';
 import { C } from '../../lib/tokens';
@@ -239,6 +239,33 @@ export default function ElectionSettings() {
                           backgroundColor: C.greenPrimary, color: '#fff',
                           fontSize: '12px', fontWeight: 700, textDecoration: 'none',
                         }}>Go to Tally &amp; Publish <ChevronRight size={13} /></Link>
+                      )}
+                      {el.status === 'draft' && (
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm('Delete this election? This cannot be undone.')) return;
+                            setActionErr(''); setActionMsg('');
+                            const { error } = await supabase.from('elections').delete().eq('id', el.id);
+                            if (error) { setActionErr(error.message); }
+                            else { setActionMsg('Election deleted.'); await loadElections(); }
+                          }}
+                          style={{display: 'flex', alignItems: 'center', gap: '6px',
+                            padding: '9px 16px', borderRadius: '8px', border: 'none',
+                            backgroundColor: '#dc2626', color: '#fff',
+                            fontSize: '12px', fontWeight: 700, cursor: 'pointer',}}
+                        ><Trash2 size={13} /> Delete</button>
+                      )}
+                      {(el.status === 'approved' || el.status === 'open') && (
+                        <button
+                          onClick={() => {
+                            if (!window.confirm('Cancel this election? All entitlements and votes will be preserved in the audit log but the election will be permanently cancelled.')) return;
+                            handleTransition(el.id, 'cancelled');
+                          }}
+                          style={{display: 'flex', alignItems: 'center', gap: '6px',
+                            padding: '9px 16px', borderRadius: '8px', border: 'none',
+                            backgroundColor: '#d97706', color: '#fff',
+                            fontSize: '12px', fontWeight: 700, cursor: 'pointer',}}
+                        ><Ban size={13} /> Cancel Election</button>
                       )}
                     </div>
                   </div>

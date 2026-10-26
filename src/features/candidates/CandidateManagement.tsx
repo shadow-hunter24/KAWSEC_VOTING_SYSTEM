@@ -1,21 +1,26 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Check, X, ChevronDown, ChevronUp, User, FileText, AlertTriangle } from 'lucide-react';
+import { Plus, Check, X, ChevronDown, ChevronUp, User, FileText, AlertTriangle, UserMinus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Position, Candidate, Election } from '../../types';
 import { C } from '../../lib/tokens';
 
 /* ── Candidate card ──────────────────────────────────────────── */
 function CandidateCard({
-  candidate, onApprove, onReject, loading,
+  candidate, onApprove, onReject, loading, electionStatus,
 }: {
   candidate: Candidate & { students?: { full_name: string; student_id_number: string } };
   onApprove: (id: string) => void;
   onReject:  (id: string, reason: string) => void;
   loading:   boolean;
+  electionStatus: string;
 }) {
   const [showReject, setShowReject] = useState(false);
   const [reason, setReason]         = useState('');
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [withdrawReason, setWithdrawReason] = useState('');
+
+  const withdrawLocked = ['open', 'closed', 'verified', 'published'].includes(electionStatus);
 
   const statusColor: Record<string, string> = {
     pending:  '#f59e0b', approved: C.greenPrimary, rejected: '#dc2626',
@@ -137,6 +142,67 @@ function CandidateCard({
           >Confirm Rejection</button>
         </div>
       )}
+
+      {/* Withdraw action — only for approved candidates */}
+      {candidate.status === 'approved' && (
+        <div style={{ borderTop: `1px solid ${C.creamBorder}`, padding: '12px 18px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => { if (!withdrawLocked) setShowWithdraw(v => !v); }}
+            disabled={loading || withdrawLocked}
+            title={withdrawLocked ? 'Cannot withdraw after voting opens' : undefined}
+            style={{display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '8px 16px', borderRadius: '8px',
+              border: '1.5px solid #fcd34d', backgroundColor: '#fffbeb',
+              color: '#d97706', fontSize: '13px', fontWeight: 700,
+              cursor: (loading || withdrawLocked) ? 'not-allowed' : 'pointer',
+              opacity: withdrawLocked ? 0.4 : 1,}}
+          ><UserMinus size={14} /> {showWithdraw ? 'Cancel' : 'Withdraw'}</button>
+        </div>
+      )}
+
+      {/* Withdraw form */}
+      {candidate.status === 'approved' && showWithdraw && !withdrawLocked && (
+        <div style={{padding: '14px 18px', borderTop: `1px solid #fde68a`, backgroundColor: '#fffbeb'}}>
+          <label style={{display: 'block', fontSize: '13px', fontWeight: 600, color: '#d97706', marginBottom: '6px'}}>
+            Reason for withdrawal <span aria-hidden="true">*</span>
+          </label>
+          <textarea
+            value={withdrawReason}
+            onChange={e => setWithdrawReason(e.target.value)}
+            placeholder="Explain why this candidate is being withdrawn…"
+            rows={2}
+            style={{width: '100%', padding: '10px 12px', borderRadius: '8px',
+              border: '1.5px solid #fcd34d', fontSize: '13px',
+              fontFamily: 'inherit', resize: 'vertical',
+              backgroundColor: '#fff',}}
+          />
+          <div style={{display: 'flex', gap: '8px', marginTop: '10px'}}>
+            <button
+              onClick={() => {
+                if (withdrawReason.trim()) {
+                  onReject(candidate.id, 'Withdrawn: ' + withdrawReason.trim());
+                  setShowWithdraw(false);
+                  setWithdrawReason('');
+                }
+              }}
+              disabled={!withdrawReason.trim() || loading}
+              style={{padding: '8px 16px', borderRadius: '8px', border: 'none',
+                backgroundColor: withdrawReason.trim() ? '#d97706' : C.creamBorder,
+                color: withdrawReason.trim() ? '#fff' : C.textMuted,
+                fontSize: '13px', fontWeight: 700,
+                cursor: withdrawReason.trim() && !loading ? 'pointer' : 'not-allowed',}}
+            >Confirm Withdrawal</button>
+            <button
+              onClick={() => { setShowWithdraw(false); setWithdrawReason(''); }}
+              style={{
+                padding: '8px 14px', borderRadius: '8px',
+                border: `1.5px solid ${C.creamBorder}`, background: 'none',
+                color: C.textMuted, fontSize: '13px', cursor: 'pointer',
+              }}
+            >Cancel</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -251,8 +317,8 @@ function AddCandidateForm({
 
 /* ── Position accordion ──────────────────────────────────────── */
 function PositionSection({
-  position, electionId,
-}: { position: Position; electionId: string }) {
+  position, electionId, electionStatus,
+}: { position: Position; electionId: string; electionStatus: string }) {
   const [open,       setOpen]       = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading,    setLoading]    = useState(false);
@@ -328,7 +394,7 @@ function PositionSection({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {candidates.map(c => (
                 <CandidateCard key={c.id} candidate={c as Candidate & { students?: { full_name: string; student_id_number: string } }}
-                  onApprove={handleApprove} onReject={handleReject} loading={actionLoad} />
+                  onApprove={handleApprove} onReject={handleReject} loading={actionLoad} electionStatus={electionStatus} />
               ))}
             </div>
           )}
@@ -362,6 +428,7 @@ export default function CandidateManagement() {
   }, [activeElec]);
 
   const roleGroups = [...new Set(positions.map(p => p.role_group))];
+  const activeElecStatus = elections.find(e => e.id === activeElec)?.status ?? 'draft';
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: C.creamBg }}>
@@ -412,7 +479,7 @@ export default function CandidateManagement() {
                   {group}
                 </h2>
                 {positions.filter(p => p.role_group === group).map(pos => (
-                  <PositionSection key={pos.id} position={pos} electionId={activeElec} />
+                  <PositionSection key={pos.id} position={pos} electionId={activeElec} electionStatus={activeElecStatus} />
                 ))}
               </div>
             ))}
