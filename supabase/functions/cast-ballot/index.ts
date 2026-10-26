@@ -30,10 +30,19 @@
 import { serve }        from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Set ALLOWED_ORIGIN in Supabase Dashboard secrets to restrict to production domain
+const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
 const CORS = {
-  "Access-Control-Allow-Origin":  "*",
+  "Access-Control-Allow-Origin":  allowedOrigin,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+async function hashToken(token: string): Promise<string> {
+  const data    = new TextEncoder().encode(token);
+  const hashBuf = await crypto.subtle.digest("SHA-256", data);
+  const hashArr = Array.from(new Uint8Array(hashBuf));
+  return hashArr.map(b => b.toString(16).padStart(2, "0")).join("");
+}
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -72,7 +81,7 @@ serve(async (req) => {
   // We validate that the credential was used (not revoked, used_at is set)
   const { data: cred } = await supabase
     .from("credential_verifiers")
-    .select("id, used_at, revoked")
+    .select("id, used_at, revoked, session_token_hash")
     .eq("student_id", student_id)
     .eq("election_id", election_id)
     .eq("revoked", false)
@@ -82,6 +91,15 @@ serve(async (req) => {
     .single();
 
   if (!cred) {
+    return json({
+      success: false,
+      message: "Invalid or expired session. Please log in again.",
+    }, 401);
+  }
+
+  // Hash the incoming token and compare to stored hash
+  const incomingHash = await hashToken(session_token);
+  if (!cred.session_token_hash || incomingHash !== cred.session_token_hash) {
     return json({
       success: false,
       message: "Invalid or expired session. Please log in again.",

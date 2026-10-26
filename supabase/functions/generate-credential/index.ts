@@ -26,8 +26,10 @@ const RATE_LIMIT_WINDOW_MINUTES = 10;
 const RATE_LIMIT_MAX_ATTEMPTS   = 3;
 const CREDENTIAL_LENGTH         = 8; // chars — e.g. "X7K2-M9PQ"
 
+// Set ALLOWED_ORIGIN in Supabase Dashboard secrets to restrict to production domain
+const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
 const CORS = {
-  "Access-Control-Allow-Origin":  "*",
+  "Access-Control-Allow-Origin":  allowedOrigin,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 

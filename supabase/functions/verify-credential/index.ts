@@ -19,13 +19,22 @@
 import { serve }         from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient }  from "https://esm.sh/@supabase/supabase-js@2";
 
+// Set ALLOWED_ORIGIN in Supabase Dashboard secrets to restrict to production domain
+const allowedOrigin = Deno.env.get('ALLOWED_ORIGIN') ?? '*';
 const CORS = {
-  "Access-Control-Allow-Origin":  "*",
+  "Access-Control-Allow-Origin":  allowedOrigin,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 async function hashCredential(credential: string, salt: string): Promise<string> {
   const data    = new TextEncoder().encode(credential + salt);
+  const hashBuf = await crypto.subtle.digest("SHA-256", data);
+  const hashArr = Array.from(new Uint8Array(hashBuf));
+  return hashArr.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function hashToken(token: string): Promise<string> {
+  const data    = new TextEncoder().encode(token);
   const hashBuf = await crypto.subtle.digest("SHA-256", data);
   const hashArr = Array.from(new Uint8Array(hashBuf));
   return hashArr.map(b => b.toString(16).padStart(2, "0")).join("");
@@ -124,6 +133,13 @@ serve(async (req) => {
 
   // ── 5. Generate session token ────────────────────────────────
   const sessionToken = await generateSessionToken(student.id, election_id);
+
+  // ── 5a. Store session token hash for cast-ballot validation ──
+  const sessionTokenHash = await hashToken(sessionToken);
+  await supabase
+    .from("credential_verifiers")
+    .update({ session_token_hash: sessionTokenHash })
+    .eq("id", verifier.id);
 
   // ── 6. Log to audit ─────────────────────────────────────────
   await supabase.from("audit_events").insert({
