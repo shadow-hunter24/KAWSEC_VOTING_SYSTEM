@@ -1,11 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Upload, UserCheck, BarChart2, Users, Settings, FileText, LogOut, Monitor, BookOpen, Home, Eye } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
-
-const C = {
-  greenPrimary: '#1a4d2e', greenLight: '#e8f5ee',
-  creamBg: '#fffdf7', creamCard: '#f5f0e8', creamBorder: '#e8e0cc', textMuted: '#5a5a4a',
-};
+import { C } from '../../lib/tokens';
 
 const cards = [
   { Icon: Eye,       title: 'Election Overview',    desc: 'Live stats: total students, credentials, votes cast, turnout %, winners per position.', link: '/admin/overview',         ready: true,  phase: 'Live'    },

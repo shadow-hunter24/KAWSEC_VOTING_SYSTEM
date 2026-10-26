@@ -3,13 +3,7 @@ import { Link } from 'react-router-dom';
 import { Plus, Check, X, ChevronDown, ChevronUp, User, FileText, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Position, Candidate, Election } from '../../types';
-
-/* ── Design tokens ─────────────────────────────────────────── */
-const C = {
-  greenPrimary: '#1a4d2e', greenDark: '#0f2d1a', greenLight: '#e8f5ee',
-  greenMid: '#2d7a4f', creamBg: '#fffdf7', creamCard: '#f5f0e8',
-  creamBorder: '#e8e0cc', textMuted: '#5a5a4a', white: '#ffffff',
-};
+import { C } from '../../lib/tokens';
 
 /* ── Candidate card ──────────────────────────────────────────── */
 function CandidateCard({

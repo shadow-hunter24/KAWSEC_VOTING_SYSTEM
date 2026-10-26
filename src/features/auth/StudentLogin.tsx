@@ -3,11 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ChevronRight, CheckCircle, User, Clock, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useVotingSession } from '../../contexts/VotingSessionContext';
-
-const C = {
-  greenPrimary: '#1a4d2e', greenDark: '#0f2d1a', greenLight: '#e8f5ee',
-  creamBg: '#fffdf7', creamCard: '#f5f0e8', creamBorder: '#e8e0cc', textMuted: '#5a5a4a',
-};
+import { C } from '../../lib/tokens';
 
 // Steps:
 //  'id'         — Enter Student ID
@@ -397,9 +393,15 @@ export default function StudentLogin() {
                     Contact the IT Coordinator if you didn't see it.
                   </p>
                   {import.meta.env.DEV && credential && (
-                    <p style={{ fontSize: '11px', color: '#f59e0b', marginTop: '4px', fontWeight: 600 }}>
-                      ⚠ DEV MODE: credential auto-filled — remove in production
-                    </p>
+                    <div role="alert" style={{
+                      marginTop: '8px', padding: '8px 12px', borderRadius: '8px',
+                      backgroundColor: '#fef3c7', border: '1px solid #f59e0b',
+                      fontSize: '12px', color: '#92400e', fontWeight: 600,
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                    }}>
+                      <AlertTriangle size={13} color="#b45309" aria-hidden="true" />
+                      DEV MODE — credential auto-filled. Remove before production.
+                    </div>
                   )}
                 </div>
 

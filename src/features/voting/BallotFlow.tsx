@@ -3,12 +3,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, User, FileText, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useVotingSession, formatTime } from '../../contexts/VotingSessionContext';
-
-const C = {
-  greenPrimary: '#1a4d2e', greenDark: '#0f2d1a', greenLight: '#e8f5ee',
-  greenMid: '#2d7a4f', creamBg: '#fffdf7', creamCard: '#f5f0e8',
-  creamBorder: '#e8e0cc', textMuted: '#5a5a4a', white: '#ffffff',
-};
+import { C } from '../../lib/tokens';
 
 interface CandidateWithStudent {
   id: string; position_id: string;

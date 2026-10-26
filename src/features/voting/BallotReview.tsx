@@ -11,15 +11,10 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ChevronLeft, AlertTriangle, User } from 'lucide-react';
 import type { BallotAuthState, PositionWithCandidates } from './BallotFlow';
 import { useVotingSession } from '../../contexts/VotingSessionContext';
+import { C } from '../../lib/tokens';
 
 // Re-export the type so BallotFlow can import it
 export type { PositionWithCandidates };
-
-const C = {
-  greenPrimary: '#1a4d2e', greenDark: '#0f2d1a', greenLight: '#e8f5ee',
-  creamBg: '#fffdf7', creamCard: '#f5f0e8', creamBorder: '#e8e0cc',
-  textMuted: '#5a5a4a', white: '#ffffff',
-};
 
 interface ReviewState extends BallotAuthState {
   selections: Record<string, string>;

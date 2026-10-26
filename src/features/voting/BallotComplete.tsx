@@ -2,11 +2,7 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { CheckCircle } from 'lucide-react';
 import { useVotingSession } from '../../contexts/VotingSessionContext';
-
-const C = {
-  greenPrimary: '#1a4d2e', greenDark: '#0f2d1a', greenLight: '#e8f5ee',
-  creamBg: '#fffdf7', creamCard: '#f5f0e8', creamBorder: '#e8e0cc', textMuted: '#5a5a4a',
-};
+import { C } from '../../lib/tokens';
 
 const AUTO_LOGOUT_SECONDS = 10; // return to login after 10 seconds
 

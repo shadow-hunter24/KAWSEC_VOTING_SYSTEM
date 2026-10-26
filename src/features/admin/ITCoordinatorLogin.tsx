@@ -1,11 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-
-const C = {
-  greenPrimary: '#1a4d2e', greenDark: '#0f2d1a', greenLight: '#e8f5ee',
-  creamBg: '#fffdf7', creamCard: '#f5f0e8', creamBorder: '#e8e0cc', textMuted: '#5a5a4a',
-};
+import { C } from '../../lib/tokens';
 
 export default function ITCoordinatorLogin() {
   const navigate  = useNavigate();
@@ -130,9 +126,9 @@ export default function ITCoordinatorLogin() {
             </div>
 
             {/* Setup hint — remove before production */}
-            <div style={{ marginTop: '20px', padding: '12px 14px', borderRadius: '10px', backgroundColor: C.creamCard, border: `1px solid ${C.creamBorder}` }}>
-              <p style={{ fontSize: '11px', color: C.textMuted, lineHeight: 1.6 }}>
-                <strong style={{ color: C.greenPrimary }}>Setup:</strong> Create an IT Coordinator account in Supabase Dashboard → Authentication → Users → Add User. Use that email and password here.
+            <div style={{ marginTop: '20px', textAlign: 'center' }}>
+              <p style={{ fontSize: '12px', color: C.textMuted, lineHeight: 1.6 }}>
+                Having trouble signing in? Contact your system administrator.
               </p>
             </div>
           </div>

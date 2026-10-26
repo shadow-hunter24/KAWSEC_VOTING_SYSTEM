@@ -3,11 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { AlertTriangle, CheckCircle, Trophy, Flag, ChevronDown, Medal } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { TallyRow, Election } from '../../types';
-
-const C = {
-  greenPrimary: '#1a4d2e', greenLight: '#e8f5ee', greenMid: '#2d7a4f',
-  creamBg: '#fffdf7', creamCard: '#f5f0e8', creamBorder: '#e8e0cc', textMuted: '#5a5a4a',
-};
+import { C } from '../../lib/tokens';
 
 // Rank labels
 const RANK_LABELS: Record<number, { title: string; colour: string; bg: string }> = {

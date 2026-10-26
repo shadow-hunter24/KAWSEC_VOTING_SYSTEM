@@ -8,19 +8,7 @@ import {
   ShieldCheck, Zap, Trophy,
 } from 'lucide-react';
 
-/* ── Design tokens ─────────────────────────────────────────── */
-const C = {
-  greenPrimary:  '#1a4d2e',
-  greenMid:      '#2d7a4f',
-  greenDark:     '#0f2d1a',
-  greenLight:    '#e8f5ee',
-  creamBg:       '#fffdf7',
-  creamCard:     '#f5f0e8',
-  creamBorder:   '#e8e0cc',
-  white:         '#ffffff',
-  textPrimary:   '#1a1a1a',
-  textMuted:     '#5a5a4a',
-};
+import { C } from '../../lib/tokens';
 
 /* ── Shared logo component ─────────────────────────────────── */
 function Logo({ size = 40 }: { size?: number }) {

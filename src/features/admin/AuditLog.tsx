@@ -3,11 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { AuditEvent } from '../../types';
-
-const C = {
-  greenPrimary: '#1a4d2e', greenLight: '#e8f5ee',
-  creamBg: '#fffdf7', creamCard: '#f5f0e8', creamBorder: '#e8e0cc', textMuted: '#5a5a4a',
-};
+import { C } from '../../lib/tokens';
 
 const ACTION_COLORS: Record<string, string> = {
   'election.approved':  '#1e40af',

@@ -8,11 +8,7 @@ import { Link } from 'react-router-dom';
 import { RefreshCw, Users, CheckCircle, Clock, Search } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Election } from '../../types';
-
-const C = {
-  greenPrimary: '#1a4d2e', greenLight: '#e8f5ee', greenMid: '#2d7a4f',
-  creamBg: '#fffdf7', creamCard: '#f5f0e8', creamBorder: '#e8e0cc', textMuted: '#5a5a4a',
-};
+import { C } from '../../lib/tokens';
 
 interface ClassTurnoutRow {
   election_id:       string;
