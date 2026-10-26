@@ -260,6 +260,7 @@ export default function StudentManagement() {
   // Filters
   const [search,      setSearch]      = useState('');
   const [filterDept,  setFilterDept]  = useState('');
+  const [filterClass, setFilterClass] = useState('');
   const [filterYear,  setFilterYear]  = useState('');
   const [filterActive,setFilterActive]= useState('all');
 
@@ -297,8 +298,12 @@ export default function StudentManagement() {
     if (filterActive === 'active')   query = query.eq('is_active', true);
     if (filterActive === 'inactive') query = query.eq('is_active', false);
 
-    // Department filter — resolve to class IDs
-    if (filterDept) {
+    // Class / Department filter
+    if (filterClass) {
+      // Specific class selected — use direct eq filter
+      query = query.eq('class_id', filterClass);
+    } else if (filterDept) {
+      // Department selected but no specific class — resolve to class IDs
       const deptClassIds = classes
         .filter(c => c.department_id === filterDept)
         .map(c => c.id);
@@ -315,7 +320,7 @@ export default function StudentManagement() {
       setPage(pg);
     }
     setLoading(false);
-  }, [search, filterDept, filterYear, filterActive, classes]);
+  }, [search, filterDept, filterClass, filterYear, filterActive, classes]);
 
   // Reload when filters change (debounced for search)
   useEffect(() => {
@@ -419,9 +424,20 @@ export default function StudentManagement() {
           </div>
 
           {/* Department filter */}
-          <select value={filterDept} onChange={e => setFilterDept(e.target.value)} style={{ ...inputStyle, minWidth: '160px', cursor: 'pointer' }}>
+          <select value={filterDept} onChange={e => { setFilterDept(e.target.value); setFilterClass(''); }} style={{ ...inputStyle, minWidth: '160px', cursor: 'pointer' }}>
             <option value="">All Departments</option>
             {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+
+          {/* Class filter */}
+          <select value={filterClass} onChange={e => setFilterClass(e.target.value)} style={{ ...inputStyle, minWidth: '150px', cursor: 'pointer' }}>
+            <option value="">All Classes</option>
+            {(filterDept
+              ? classes.filter(c => c.department_id === filterDept)
+              : classes
+            ).slice().sort((a, b) => a.name.localeCompare(b.name)).map(c => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
           </select>
 
           {/* Year group filter */}
@@ -460,7 +476,7 @@ export default function StudentManagement() {
           <div style={{ textAlign: 'center', padding: '64px', backgroundColor: C.white, borderRadius: '16px', border: `1px solid ${C.creamBorder}` }}>
             <p style={{ fontWeight: 700, color: C.greenPrimary, marginBottom: '8px' }}>No students found</p>
             <p style={{ fontSize: '13px', color: C.textMuted }}>
-              {search || filterDept || filterYear || filterActive !== 'all'
+              {search || filterDept || filterClass || filterYear || filterActive !== 'all'
                 ? 'Try clearing the filters above.'
                 : 'Import students using the Import Students page.'}
             </p>

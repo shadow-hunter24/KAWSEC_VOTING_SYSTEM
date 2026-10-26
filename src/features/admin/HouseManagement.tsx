@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Edit2, Trash2, Check, X, AlertTriangle, Home } from 'lucide-react';
+import { Plus, Edit2, Trash2, Check, X, AlertTriangle, Home, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { C } from '../../lib/tokens';
 
@@ -12,19 +12,116 @@ interface House {
   student_count?: number;
 }
 
+interface MemberRow {
+  id: string;
+  student_id_number: string;
+  full_name: string;
+  gender: string;
+  year_group: number;
+  is_active: boolean;
+  classes: { name: string } | null;
+}
+
 const PRESET_COLOURS = [
   '#1a4d2e', '#2d7a4f', '#0f2d1a', '#3d8f5f',
   '#1e40af', '#7c3aed', '#b45309', '#dc2626',
   '#0891b2', '#059669', '#d97706', '#9d174d',
 ];
 
+// ── House member panel ────────────────────────────────────────
+function HouseMemberPanel({ house }: { house: House }) {
+  const [members, setMembers] = useState<MemberRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error,   setError]   = useState('');
+
+  useEffect(() => {
+    async function fetchMembers() {
+      const { data, error: fetchErr } = await supabase
+        .from('students')
+        .select('id, student_id_number, full_name, gender, year_group, is_active, classes(name)')
+        .eq('house_id', house.id)
+        .order('full_name');
+      setMembers((data as MemberRow[]) ?? []);
+      setError(fetchErr?.message ?? '');
+      setLoading(false);
+    }
+    fetchMembers();
+  }, []);
+
+  return (
+    <div style={{
+      marginTop: '6px',
+      borderRadius: '12px',
+      border: `1px solid ${C.greenPrimary}20`,
+      backgroundColor: C.creamCard,
+      overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{ padding: '12px 16px', backgroundColor: C.greenLight, fontSize: '13px', fontWeight: 700, color: C.greenPrimary }}>
+        {members.length} student{members.length !== 1 ? 's' : ''} in {house.name}
+      </div>
+
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '32px' }}>
+          <div style={{ width: '28px', height: '28px', borderRadius: '50%', border: `3px solid ${C.creamBorder}`, borderTopColor: C.greenPrimary, margin: '0 auto 10px', animation: 'spin 0.8s linear infinite' }} />
+          <p style={{ color: C.textMuted, fontSize: '12px' }}>Loading members…</p>
+        </div>
+      ) : error ? (
+        <div style={{ padding: '16px', color: '#dc2626', fontSize: '12px' }}>{error}</div>
+      ) : members.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '32px', color: C.textMuted, fontSize: '13px' }}>
+          No students assigned to this house
+        </div>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+          <thead>
+            <tr style={{ backgroundColor: C.creamBg }}>
+              {['Student ID', 'Full Name', 'Gender', 'Class', 'Form', 'Status'].map(h => (
+                <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontWeight: 700, color: C.textMuted, borderBottom: `1px solid ${C.creamBorder}` }}>
+                  {h}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {members.map(m => (
+              <tr key={m.id} style={{ borderBottom: `1px solid ${C.creamBorder}` }}>
+                <td style={{ padding: '9px 14px', fontFamily: 'monospace', color: C.greenPrimary, fontWeight: 600 }}>
+                  {m.student_id_number}
+                </td>
+                <td style={{ padding: '9px 14px' }}>{m.full_name}</td>
+                <td style={{ padding: '9px 14px', textTransform: 'capitalize', color: C.textMuted }}>{m.gender}</td>
+                <td style={{ padding: '9px 14px', color: C.textMuted }}>
+                  {(m.classes as { name: string } | null)?.name ?? '—'}
+                </td>
+                <td style={{ padding: '9px 14px', color: C.textMuted, textAlign: 'center' }}>{m.year_group}</td>
+                <td style={{ padding: '9px 14px' }}>
+                  <span style={{
+                    fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
+                    backgroundColor: m.is_active ? C.greenLight : '#fef2f2',
+                    color: m.is_active ? C.greenPrimary : '#dc2626',
+                  }}>
+                    {m.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
+
 // ── Inline edit row ───────────────────────────────────────────
 function HouseRow({
-  house, onSave, onDelete,
+  house, onSave, onDelete, isOpen, onToggleMembers,
 }: {
-  house:    House;
-  onSave:   (id: string, name: string, code: string, colour: string) => Promise<string | null>;
-  onDelete: (house: House) => Promise<string | null>;
+  house:           House;
+  onSave:          (id: string, name: string, code: string, colour: string) => Promise<string | null>;
+  onDelete:        (house: House) => Promise<string | null>;
+  isOpen:          boolean;
+  onToggleMembers: (id: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [name,    setName]    = useState(house.name);
@@ -127,63 +224,75 @@ function HouseRow({
   }
 
   return (
-    <div style={{
-      display: 'flex', alignItems: 'center', gap: '14px',
-      padding: '14px 18px', borderRadius: '14px', backgroundColor: C.white,
-      border: `1px solid ${C.creamBorder}`,
-      transition: 'border-color 0.15s, box-shadow 0.15s',
-    }}
-      onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = '#a3c4ae'; el.style.boxShadow = '0 2px 8px rgba(26,77,46,0.08)'; }}
-      onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = C.creamBorder; el.style.boxShadow = 'none'; }}
-    >
-      {/* Colour swatch */}
+    <>
       <div style={{
-        width: '44px', height: '44px', borderRadius: '12px', flexShrink: 0,
-        backgroundColor: house.colour ?? C.greenPrimary,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }} aria-hidden="true">
-        <Home size={20} color="white" />
-      </div>
-
-      {/* Info */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <p style={{ fontWeight: 700, fontSize: '15px', color: '#1a1a1a' }}>{house.name}</p>
-          <span style={{
-            fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
-            backgroundColor: C.creamCard, color: C.textMuted,
-            fontFamily: 'monospace', border: `1px solid ${C.creamBorder}`,
-          }}>{house.code}</span>
+        display: 'flex', alignItems: 'center', gap: '14px',
+        padding: '14px 18px', borderRadius: '14px', backgroundColor: C.white,
+        border: `1px solid ${C.creamBorder}`,
+        transition: 'border-color 0.15s, box-shadow 0.15s',
+      }}
+        onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = '#a3c4ae'; el.style.boxShadow = '0 2px 8px rgba(26,77,46,0.08)'; }}
+        onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = C.creamBorder; el.style.boxShadow = 'none'; }}
+      >
+        {/* Colour swatch */}
+        <div style={{
+          width: '44px', height: '44px', borderRadius: '12px', flexShrink: 0,
+          backgroundColor: house.colour ?? C.greenPrimary,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }} aria-hidden="true">
+          <Home size={20} color="white" />
         </div>
-        {house.student_count !== undefined && (
-          <p style={{ fontSize: '12px', color: C.textMuted, marginTop: '2px' }}>
-            {house.student_count} student{house.student_count !== 1 ? 's' : ''} assigned
-          </p>
-        )}
-      </div>
 
-      {/* Actions */}
-      <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
-        <button onClick={() => setEditing(true)} aria-label={`Edit ${house.name}`}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '5px',
-            padding: '7px 12px', borderRadius: '8px', border: 'none',
-            backgroundColor: C.greenLight, color: C.greenPrimary,
-            fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-          }}>
-          <Edit2 size={13} />Edit
-        </button>
-        <button onClick={() => onDelete(house)} aria-label={`Delete ${house.name}`}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '5px',
-            padding: '7px 12px', borderRadius: '8px', border: 'none',
-            backgroundColor: '#fef2f2', color: '#dc2626',
-            fontSize: '12px', fontWeight: 600, cursor: 'pointer',
-          }}>
-          <Trash2 size={13} />Delete
-        </button>
+        {/* Info */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <p style={{ fontWeight: 700, fontSize: '15px', color: '#1a1a1a' }}>{house.name}</p>
+            <span style={{
+              fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
+              backgroundColor: C.creamCard, color: C.textMuted,
+              fontFamily: 'monospace', border: `1px solid ${C.creamBorder}`,
+            }}>{house.code}</span>
+          </div>
+          {house.student_count !== undefined && (
+            <p style={{ fontSize: '12px', color: C.textMuted, marginTop: '2px' }}>
+              {house.student_count} student{house.student_count !== 1 ? 's' : ''} assigned
+            </p>
+          )}
+        </div>
+
+        {/* Actions */}
+        <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+          <button onClick={() => onToggleMembers(house.id)} aria-label={`View members of ${house.name}`}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '7px 12px', borderRadius: '8px', border: 'none',
+              backgroundColor: C.greenLight, color: C.greenPrimary,
+              fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+            }}>
+            <Users size={13} />{isOpen ? 'Hide Members' : 'View Members'}
+          </button>
+          <button onClick={() => setEditing(true)} aria-label={`Edit ${house.name}`}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '7px 12px', borderRadius: '8px', border: 'none',
+              backgroundColor: C.greenLight, color: C.greenPrimary,
+              fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+            }}>
+            <Edit2 size={13} />Edit
+          </button>
+          <button onClick={() => onDelete(house)} aria-label={`Delete ${house.name}`}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '7px 12px', borderRadius: '8px', border: 'none',
+              backgroundColor: '#fef2f2', color: '#dc2626',
+              fontSize: '12px', fontWeight: 600, cursor: 'pointer',
+            }}>
+            <Trash2 size={13} />Delete
+          </button>
+        </div>
       </div>
-    </div>
+      {isOpen && <HouseMemberPanel house={house} />}
+    </>
   );
 }
 
@@ -193,6 +302,7 @@ export default function HouseManagement() {
   const [loading, setLoading] = useState(true);
   const [msg,     setMsg]     = useState('');
   const [err,     setErr]     = useState('');
+  const [openHouseId, setOpenHouseId] = useState<string | null>(null);
 
   // Add form
   const [showAdd,    setShowAdd]    = useState(false);
@@ -291,8 +401,11 @@ export default function HouseManagement() {
     return null;
   }
 
+  function toggleMembers(id: string) {
+    setOpenHouseId(prev => prev === id ? null : id);
+  }
+
   const inputStyle: React.CSSProperties = {
-    padding: '9px 12px', borderRadius: '8px',
     border: `1.5px solid ${C.creamBorder}`, fontSize: '13px',
     fontFamily: 'inherit', backgroundColor: C.creamBg, outline: 'none',
     transition: 'border-color 0.15s',
@@ -446,6 +559,8 @@ export default function HouseManagement() {
                 house={house}
                 onSave={handleSave}
                 onDelete={handleDelete}
+                isOpen={openHouseId === house.id}
+                onToggleMembers={toggleMembers}
               />
             ))}
           </div>
