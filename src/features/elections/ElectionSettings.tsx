@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Calendar, ChevronRight, AlertTriangle, CheckCircle, Settings, Trash2, Ban } from 'lucide-react';
+import { Plus, Calendar, ChevronRight, AlertTriangle, CheckCircle, Settings, Trash2, Ban, ListPlus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Election } from '../../types';
 import { C } from '../../lib/tokens';
@@ -50,22 +50,46 @@ export default function ElectionSettings() {
     e.preventDefault();
     if (!title.trim()) return;
     setCreating(true); setActionErr('');
-    const { error } = await supabase.from('elections').insert({
+    const { data: newElection, error } = await supabase.from('elections').insert({
       title: title.trim(),
       status: 'draft',
       voting_opens_at:  opensAt  || null,
       voting_closes_at: closesAt || null,
       description: description.trim() || null,
       created_by: 'IT Coordinator',
-    });
+    }).select().single();
     if (error) { setActionErr(error.message); }
     else {
+      // Auto-generate standard ballot positions for this new election
+      try {
+        const { data: posData, error: posErr } = await supabase.rpc('create_election_positions', {
+          p_election_id: newElection.id,
+        });
+        if (posErr) {
+          setActionMsg('Election created. Click "Generate Positions" below to create ballot positions.');
+        } else {
+          setActionMsg(`Election created successfully. ${posData ?? 0} ballot positions generated.`);
+        }
+      } catch {
+        setActionMsg('Election created. Click "Generate Positions" below to create ballot positions.');
+      }
       setTitle(''); setOpensAt(''); setClosesAt(''); setDescription('');
       setShowCreate(false);
-      setActionMsg('Election created successfully.');
       await loadElections();
     }
     setCreating(false);
+  }
+
+  async function handleGeneratePositions(electionId: string) {
+    setActionErr(''); setActionMsg('');
+    const { data, error } = await supabase.rpc('create_election_positions', {
+      p_election_id: electionId,
+    });
+    if (error) {
+      setActionErr(error.message);
+    } else {
+      setActionMsg(`${data ?? 0} ballot positions generated. Go to Candidate Management to add candidates.`);
+    }
   }
 
   async function handleTransition(electionId: string, target: string) {
@@ -241,6 +265,15 @@ export default function ElectionSettings() {
                         }}>Go to Tally &amp; Publish <ChevronRight size={13} /></Link>
                       )}
                       {el.status === 'draft' && (
+                        <>
+                        <button
+                          onClick={() => handleGeneratePositions(el.id)}
+                          title="Create the standard 14+ ballot positions for this election"
+                          style={{display: 'flex', alignItems: 'center', gap: '6px',
+                            padding: '9px 16px', borderRadius: '8px', border: 'none',
+                            backgroundColor: C.greenLight, color: C.greenPrimary,
+                            fontSize: '12px', fontWeight: 700, cursor: 'pointer',}}
+                        ><ListPlus size={13} /> Generate Positions</button>
                         <button
                           onClick={async () => {
                             if (!window.confirm('Delete this election? This cannot be undone.')) return;
@@ -262,6 +295,7 @@ export default function ElectionSettings() {
                             backgroundColor: '#dc2626', color: '#fff',
                             fontSize: '12px', fontWeight: 700, cursor: 'pointer',}}
                         ><Trash2 size={13} /> Delete</button>
+                        </>
                       )}
                       {(el.status === 'approved' || el.status === 'open') && (
                         <button
