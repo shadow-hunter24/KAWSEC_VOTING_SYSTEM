@@ -392,7 +392,7 @@ export default function PositionManagement() {
         ) : (
           <>
             {/* Election selector */}
-            {elections.length > 1 && (
+            {elections.length >= 1 && (
               <div style={{ marginBottom: '24px' }}>
                 <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: C.greenPrimary, marginBottom: '6px' }}>Election</label>
                 <select
