@@ -18,6 +18,7 @@ import StudentImport            from '../features/students/StudentImport';
 import StudentManagement        from '../features/students/StudentManagement';
 import CandidateManagement      from '../features/candidates/CandidateManagement';
 import ElectionSettings         from '../features/elections/ElectionSettings';
+import PositionManagement       from '../features/elections/PositionManagement';
 import TurnoutDashboard         from '../features/elections/TurnoutDashboard';
 import TallyAndPublish          from '../features/elections/TallyAndPublish';
 import ClassMonitor             from '../features/elections/ClassMonitor';
@@ -54,6 +55,7 @@ export default function Router() {
           <Route path="/admin/students"          element={<Guarded><StudentManagement /></Guarded>} />
             <Route path="/admin/candidates"        element={<Guarded><CandidateManagement /></Guarded>} />
             <Route path="/admin/elections"         element={<Guarded><ElectionSettings /></Guarded>} />
+            <Route path="/admin/positions"          element={<Guarded><PositionManagement /></Guarded>} />
             <Route path="/admin/turnout"           element={<Guarded><TurnoutDashboard /></Guarded>} />
             <Route path="/admin/classes"           element={<Guarded><ClassMonitor /></Guarded>} />
           <Route path="/admin/class-management"  element={<Guarded><ClassManagement /></Guarded>} />

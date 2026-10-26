@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Upload, UserCheck, BarChart2, Users, Settings, FileText, LogOut, Monitor, BookOpen, Home, Eye } from 'lucide-react';
+import { Upload, UserCheck, BarChart2, Users, Settings, FileText, LogOut, Monitor, BookOpen, Home, Eye, ListPlus } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { C } from '../../lib/tokens';
 
@@ -11,6 +11,7 @@ const cards = [
   { Icon: Home,      title: 'House Management',     desc: 'Add, edit and manage school houses. Houses are used for House Captain elections.',  link: '/admin/houses',           ready: true,  phase: 'Phase 3' },
   { Icon: UserCheck, title: 'Candidate Management', desc: 'Add candidates, upload photos/manifestos, approve or reject.',                        link: '/admin/candidates',       ready: true,  phase: 'Phase 3' },
   { Icon: Settings,  title: 'Election Settings',    desc: 'Create elections, set schedules, approve and open/close voting.',                      link: '/admin/elections',        ready: true,  phase: 'Phase 5' },
+  { Icon: ListPlus,  title: 'Position Management',  desc: 'Create ballot positions for each election — titles, gender scope, house eligibility.', link: '/admin/positions',        ready: true,  phase: 'Phase 3' },
   { Icon: BarChart2, title: 'Turnout Dashboard',    desc: 'Live participation rates per position — no candidate totals shown.',                   link: '/admin/turnout',          ready: true,  phase: 'Phase 5' },
   { Icon: Monitor,   title: 'Class Monitor',        desc: 'Real-time per-class voting progress. Call classes to the ICT lab in order.',           link: '/admin/classes',          ready: true,  phase: 'Phase 6+' },
   { Icon: Users,     title: 'Tally & Publish',      desc: 'Review vote counts, resolve ties, publish official results.',                          link: '/admin/tally',            ready: true,  phase: 'Phase 5' },
