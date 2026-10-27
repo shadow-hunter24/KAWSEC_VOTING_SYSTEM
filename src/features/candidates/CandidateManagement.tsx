@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Check, X, ChevronDown, ChevronUp, User, FileText, AlertTriangle, UserMinus } from 'lucide-react';
+import { Plus, Check, X, ChevronDown, ChevronUp, User, FileText, AlertTriangle, UserMinus, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Position, Candidate, Election } from '../../types';
 import { C } from '../../lib/tokens';
