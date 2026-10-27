@@ -142,27 +142,15 @@ function EditModal({
               style={inputStyle} onFocus={focus} onBlur={blur} required />
           </div>
 
-          {/* Gender + Eligibility side by side */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div>
-              <label htmlFor="pos-gender" style={labelStyle}>Gender Scope *</label>
-              <select id="pos-gender" value={form.gender_scope}
-                onChange={e => setForm(f => ({ ...f, gender_scope: e.target.value as 'male' | 'female' | 'all' }))}
-                style={{ ...inputStyle, cursor: 'pointer' }} onFocus={focus} onBlur={blur}>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="all">All</option>
-              </select>
-            </div>
-            <div>
-              <label htmlFor="pos-elig" style={labelStyle}>Eligibility *</label>
-              <select id="pos-elig" value={form.eligibility_scope}
-                onChange={e => setForm(f => ({ ...f, eligibility_scope: e.target.value as 'school_wide' | 'house' }))}
-                style={{ ...inputStyle, cursor: 'pointer' }} onFocus={focus} onBlur={blur}>
-                <option value="school_wide">School-wide</option>
-                <option value="house">House only</option>
-              </select>
-            </div>
+          {/* Eligibility */}
+          <div>
+            <label htmlFor="pos-elig" style={labelStyle}>Eligibility *</label>
+            <select id="pos-elig" value={form.eligibility_scope}
+              onChange={e => setForm(f => ({ ...f, eligibility_scope: e.target.value as 'school_wide' | 'house' }))}
+              style={{ ...inputStyle, cursor: 'pointer' }} onFocus={focus} onBlur={blur}>
+              <option value="school_wide">School-wide</option>
+              <option value="house">House only</option>
+            </select>
           </div>
 
           {/* House (conditional) */}
@@ -222,10 +210,8 @@ export default function PositionManagement() {
   const [loading,    setLoading]    = useState(true);
 
   // Add form
-  const [showAdd,      setShowAdd]     = useState(false);
-  const [newTitle,     setNewTitle]     = useState('');
-  const [newRole,      setNewRole]      = useState('');
-  const [newGender,    setNewGender]    = useState<'male' | 'female' | 'all'>('male');
+  const [showAdd,      setShowAdd]      = useState(false);
+  const [newRoleName,  setNewRoleName]  = useState('');
   const [newElig,      setNewElig]      = useState<'school_wide' | 'house'>('school_wide');
   const [newHouse,     setNewHouse]     = useState('');
   const [adding,       setAdding]       = useState(false);
@@ -273,37 +259,59 @@ export default function PositionManagement() {
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!newTitle.trim() || !newRole.trim()) { setSaveErr('Title and role group are required.'); return; }
+    const roleName = newRoleName.trim();
+    if (!roleName) { setSaveErr('Role name is required.'); return; }
     if (newElig === 'house' && !newHouse) { setSaveErr('Select a house for house-scoped positions.'); return; }
     setAdding(true); setSaveErr(''); setSaveMsg('');
 
-    const { error } = await supabase.from('positions').insert({
+    const sortBase = positions.length > 0 ? Math.max(...positions.map(p => p.sort_order)) + 1 : 1;
+
+    const { error: errMale } = await supabase.from('positions').insert({
       election_id:       activeElec,
-      title:             newTitle.trim(),
-      role_group:        newRole.trim(),
-      gender_scope:      newGender,
+      title:             `${roleName} (Male)`,
+      role_group:        roleName,
+      gender_scope:      'male',
       eligibility_scope: newElig,
       house_id:          newElig === 'house' ? newHouse : null,
-      sort_order:        positions.length > 0 ? Math.max(...positions.map(p => p.sort_order)) + 1 : 1,
+      sort_order:        sortBase,
     });
 
-    if (error) {
-      setSaveErr(error.message);
-    } else {
-      // Auto-generate entitlements so students can vote on this position immediately
-      try {
-        const { data: entData } = await supabase.rpc('generate_voting_entitlements', {
-          p_election_id: activeElec,
-        });
-        const count = entData?.entitlements_created ?? 0;
-        setSaveMsg(`Position "${newTitle.trim()}" added. ${count} entitlements generated — eligible students can now vote on this position.`);
-      } catch {
-        setSaveMsg(`Position "${newTitle.trim()}" added. Run "Generate Entitlements" in Election Settings if students can't see it.`);
-      }
-      setNewTitle(''); setNewRole(''); setNewGender('male'); setNewElig('school_wide'); setNewHouse('');
-      setShowAdd(false);
-      await loadPositions();
+    if (errMale) {
+      setSaveErr(errMale.message);
+      setAdding(false);
+      return;
     }
+
+    const { error: errFemale } = await supabase.from('positions').insert({
+      election_id:       activeElec,
+      title:             `${roleName} (Female)`,
+      role_group:        roleName,
+      gender_scope:      'female',
+      eligibility_scope: newElig,
+      house_id:          newElig === 'house' ? newHouse : null,
+      sort_order:        sortBase + 1,
+    });
+
+    if (errFemale) {
+      setSaveErr(errFemale.message);
+      setAdding(false);
+      return;
+    }
+
+    // Auto-generate entitlements so students can vote on these positions immediately
+    try {
+      const { data: entData } = await supabase.rpc('generate_voting_entitlements', {
+        p_election_id: activeElec,
+      });
+      const count = entData?.entitlements_created ?? 0;
+      setSaveMsg(`Role added: 2 positions created for "${roleName}". ${count} entitlements generated — eligible students can now vote on these positions.`);
+    } catch {
+      setSaveMsg(`Role added: 2 positions created for "${roleName}". Run "Generate Entitlements" in Election Settings if students can't see them.`);
+    }
+
+    setNewRoleName(''); setNewElig('school_wide'); setNewHouse('');
+    setShowAdd(false);
+    await loadPositions();
     setAdding(false);
   }
 
@@ -420,7 +428,7 @@ export default function PositionManagement() {
               <div style={{ padding: '14px 18px', borderRadius: '12px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', marginBottom: '20px' }}>
                 <p style={{ fontSize: '13px', color: '#92400e', lineHeight: 1.65 }}>
                   {canAdd
-                    ? <>Editing and deleting positions is locked. You can still <strong>add new positions</strong> — entitlements will be generated automatically so eligible students can vote on them.</>
+                    ? <>Editing and deleting positions is locked. You can still <strong>add new roles</strong> — entitlements will be generated automatically so eligible students can vote on them.</>
                     : <>This election is <strong>{activeElecStatus}</strong>. Positions are fully locked and cannot be changed.</>
                   }
                 </p>
@@ -452,7 +460,7 @@ export default function PositionManagement() {
                       color: showAdd ? C.textMuted : '#fff',
                       fontSize: '13px', fontWeight: 700, cursor: 'pointer',
                     }}>
-                    {showAdd ? <><X size={15} />Cancel</> : <><Plus size={15} />Add Position</>}
+                    {showAdd ? <><X size={15} />Cancel</> : <><Plus size={15} />Add Role</>}
                   </button>
                 )}
               </div>
@@ -465,42 +473,37 @@ export default function PositionManagement() {
                 border: `1px solid ${C.creamBorder}`, marginBottom: '24px',
               }}>
                 <h3 style={{ fontWeight: 700, fontSize: '14px', color: C.greenPrimary, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Plus size={16} /> New Position
+                  <Plus size={16} /> New Role
                 </h3>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.greenPrimary, marginBottom: '4px' }}>Title *</label>
-                    <input value={newTitle} onChange={e => setNewTitle(e.target.value)}
-                      placeholder="e.g. Head Boy, Sports Prefect (Male)"
-                      style={inputStyle} onFocus={focus} onBlur={blur} autoFocus required />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.greenPrimary, marginBottom: '4px' }}>Role Group *</label>
-                    <input value={newRole} onChange={e => setNewRole(e.target.value)}
-                      placeholder="e.g. School Prefect, Sports Prefect"
-                      style={inputStyle} onFocus={focus} onBlur={blur} required />
-                  </div>
+                {/* Role Name */}
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.greenPrimary, marginBottom: '4px' }}>Role Name *</label>
+                  <input value={newRoleName} onChange={e => setNewRoleName(e.target.value)}
+                    placeholder="e.g. School Prefect, Sports Prefect"
+                    style={inputStyle} onFocus={focus} onBlur={blur} autoFocus required />
+                  {/* Live preview */}
+                  {newRoleName.trim() && (
+                    <div style={{
+                      marginTop: '8px', padding: '10px 14px', borderRadius: '9px',
+                      backgroundColor: C.greenLight, border: `1px solid ${C.greenMid}40`,
+                      fontSize: '12px', color: C.greenPrimary, fontWeight: 600,
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                    }}>
+                      <ArrowRight size={13} style={{ flexShrink: 0 }} />
+                      Will create: &ldquo;{newRoleName.trim()} (Male)&rdquo; and &ldquo;{newRoleName.trim()} (Female)&rdquo;
+                    </div>
+                  )}
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.greenPrimary, marginBottom: '4px' }}>Gender Scope *</label>
-                    <select value={newGender} onChange={e => setNewGender(e.target.value as 'male' | 'female' | 'all')}
-                      style={{ ...inputStyle, cursor: 'pointer' }} onFocus={focus} onBlur={blur}>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="all">All</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.greenPrimary, marginBottom: '4px' }}>Eligibility *</label>
-                    <select value={newElig} onChange={e => setNewElig(e.target.value as 'school_wide' | 'house')}
-                      style={{ ...inputStyle, cursor: 'pointer' }} onFocus={focus} onBlur={blur}>
-                      <option value="school_wide">School-wide (all students vote)</option>
-                      <option value="house">House only (house members vote)</option>
-                    </select>
-                  </div>
+                {/* Eligibility */}
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.greenPrimary, marginBottom: '4px' }}>Eligibility *</label>
+                  <select value={newElig} onChange={e => setNewElig(e.target.value as 'school_wide' | 'house')}
+                    style={{ ...inputStyle, cursor: 'pointer' }} onFocus={focus} onBlur={blur}>
+                    <option value="school_wide">School-wide (all students vote)</option>
+                    <option value="house">House only (house members vote)</option>
+                  </select>
                 </div>
 
                 {newElig === 'house' && (
@@ -521,7 +524,7 @@ export default function PositionManagement() {
                   color: adding ? C.textMuted : '#fff',
                   fontSize: '13px', fontWeight: 700, cursor: adding ? 'not-allowed' : 'pointer',
                 }}>
-                  <Plus size={15} /> {adding ? 'Adding…' : 'Add Position'}
+                  <Plus size={15} /> {adding ? 'Adding…' : 'Add Role (2 positions)'}
                 </button>
               </form>
             )}
@@ -538,7 +541,7 @@ export default function PositionManagement() {
                 <p style={{ fontWeight: 700, color: C.greenPrimary, marginBottom: '6px' }}>No positions yet</p>
                 <p style={{ fontSize: '13px', color: C.textMuted }}>
                   {canAdd
-                    ? 'Click "Add Position" above to create the first one.'
+                    ? 'Click "Add Role" above to create the first one.'
                     : 'No positions have been created for this election.'}
                 </p>
               </div>
