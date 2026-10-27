@@ -7,11 +7,12 @@ import { C } from '../../lib/tokens';
 
 /* ── Candidate card ──────────────────────────────────────────── */
 function CandidateCard({
-  candidate, onApprove, onReject, loading, electionStatus,
+  candidate, onApprove, onReject, onRemove, loading, electionStatus,
 }: {
   candidate: Candidate & { students?: { full_name: string; student_id_number: string } };
   onApprove: (id: string) => void;
   onReject:  (id: string, reason: string) => void;
+  onRemove:  (id: string) => void;
   loading:   boolean;
   electionStatus: string;
 }) {
@@ -207,6 +208,27 @@ function CandidateCard({
           </div>
         </div>
       )}
+
+      {/* Remove — only in draft elections */}
+      {electionStatus === 'draft' && (
+        <div style={{ borderTop: `1px solid ${C.creamBorder}`, padding: '12px 18px' }}>
+          <button
+            onClick={() => {
+              if (!window.confirm('Permanently remove this candidate? This cannot be undone.')) return;
+              onRemove(candidate.id);
+            }}
+            disabled={loading}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '6px',
+              padding: '8px 16px', borderRadius: '8px',
+              border: '1.5px solid #fca5a5', backgroundColor: '#fef2f2',
+              color: '#dc2626', fontSize: '13px', fontWeight: 700,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.6 : 1,
+            }}
+          ><Trash2 size={14} /> Remove</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -358,6 +380,13 @@ function PositionSection({
     setActionLoad(false);
   }
 
+  async function handleRemove(id: string) {
+    setActionLoad(true);
+    await supabase.from('candidates').delete().eq('id', id);
+    await loadCandidates();
+    setActionLoad(false);
+  }
+
   const approved = candidates.filter(c => c.status === 'approved').length;
   const pending  = candidates.filter(c => c.status === 'pending').length;
 
@@ -398,7 +427,7 @@ function PositionSection({
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {candidates.map(c => (
                 <CandidateCard key={c.id} candidate={c as Candidate & { students?: { full_name: string; student_id_number: string } }}
-                  onApprove={handleApprove} onReject={handleReject} loading={actionLoad} electionStatus={electionStatus} />
+                  onApprove={handleApprove} onReject={handleReject} onRemove={handleRemove} loading={actionLoad} electionStatus={electionStatus} />
               ))}
             </div>
           )}

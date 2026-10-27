@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Calendar, ChevronRight, AlertTriangle, CheckCircle, Settings, Trash2, Ban } from 'lucide-react';
+import { Plus, Calendar, ChevronRight, AlertTriangle, CheckCircle, Settings, Trash2, Ban, RotateCcw } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Election } from '../../types';
 import { C } from '../../lib/tokens';
@@ -30,6 +30,7 @@ export default function ElectionSettings() {
   const [actionErr,   setActionErr]   = useState('');
   const [showCreate,  setShowCreate]  = useState(false);
   const [creating,    setCreating]    = useState(false);
+  const [unpublishing, setUnpublishing] = useState(false);
 
   // New election form
   const [title,      setTitle]      = useState('');
@@ -275,7 +276,27 @@ export default function ElectionSettings() {
                             fontSize: '12px', fontWeight: 700, cursor: 'pointer',}}
                         ><Ban size={13} /> Cancel Election</button>
                       )}
-                    </div>
+                      {el.status === 'published' && (
+                        <button
+                          disabled={unpublishing}
+                          onClick={async () => {
+                            if (!window.confirm('Unpublish results for this election? The election will return to "verified" status and results will be hidden from the public.')) return;
+                            setActionErr(''); setActionMsg(''); setUnpublishing(true);
+                            await supabase.from('published_results').delete().eq('election_id', el.id);
+                            await supabase.from('elections').update({ status: 'verified', updated_at: new Date().toISOString() }).eq('id', el.id);
+                            await supabase.from('audit_events').insert({ action: 'results.unpublished', actor: 'IT Coordinator', election_id: el.id, details: { previous_status: 'published' } });
+                            setActionMsg('Results unpublished. Election returned to verified status.');
+                            await loadElections();
+                            setUnpublishing(false);
+                          }}
+                          style={{display: 'flex', alignItems: 'center', gap: '6px',
+                            padding: '9px 16px', borderRadius: '8px', border: 'none',
+                            backgroundColor: '#d97706', color: '#fff',
+                            fontSize: '12px', fontWeight: 700,
+                            cursor: unpublishing ? 'not-allowed' : 'pointer',
+                            opacity: unpublishing ? 0.6 : 1,}}
+                        ><RotateCcw size={13} /> Unpublish Results</button>
+                      )}                    </div>
                   </div>
                 </div>
               );
