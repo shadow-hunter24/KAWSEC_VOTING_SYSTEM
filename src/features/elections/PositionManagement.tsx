@@ -290,7 +290,16 @@ export default function PositionManagement() {
     if (error) {
       setSaveErr(error.message);
     } else {
-      setSaveMsg(`Position "${newTitle.trim()}" added.`);
+      // Auto-generate entitlements so students can vote on this position immediately
+      try {
+        const { data: entData } = await supabase.rpc('generate_voting_entitlements', {
+          p_election_id: activeElec,
+        });
+        const count = entData?.entitlements_created ?? 0;
+        setSaveMsg(`Position "${newTitle.trim()}" added. ${count} entitlements generated — eligible students can now vote on this position.`);
+      } catch {
+        setSaveMsg(`Position "${newTitle.trim()}" added. Run "Generate Entitlements" in Election Settings if students can't see it.`);
+      }
       setNewTitle(''); setNewRole(''); setNewGender('male'); setNewElig('school_wide'); setNewHouse('');
       setShowAdd(false);
       await loadPositions();
@@ -327,6 +336,7 @@ export default function PositionManagement() {
   }
 
   const roleGroups = [...new Set(positions.map(p => p.role_group))];
+  const canAdd  = ['draft', 'approved', 'open'].includes(activeElecStatus);
   const canEdit = activeElecStatus === 'draft';
 
   const inputStyle: React.CSSProperties = {
@@ -409,8 +419,10 @@ export default function PositionManagement() {
             {!canEdit && (
               <div style={{ padding: '14px 18px', borderRadius: '12px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', marginBottom: '20px' }}>
                 <p style={{ fontSize: '13px', color: '#92400e', lineHeight: 1.65 }}>
-                  This election is <strong>{activeElecStatus}</strong>. Positions are locked and cannot be edited.
-                  {activeElecStatus === 'draft' ? '' : ' Make a copy or create a new draft election to change positions.'}
+                  {canAdd
+                    ? <>Editing and deleting positions is locked. You can still <strong>add new positions</strong> — entitlements will be generated automatically so eligible students can vote on them.</>
+                    : <>This election is <strong>{activeElecStatus}</strong>. Positions are fully locked and cannot be changed.</>
+                  }
                 </p>
               </div>
             )}
@@ -421,7 +433,7 @@ export default function PositionManagement() {
                 {loading ? 'Loading…' : `${positions.length} Position${positions.length !== 1 ? 's' : ''}`}
               </h2>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                {canEdit && positions.length > 0 && (
+                {canAdd && positions.length > 0 && (
                   <Link to="/admin/candidates" style={{
                     display: 'flex', alignItems: 'center', gap: '6px',
                     padding: '10px 16px', borderRadius: '10px',
@@ -431,7 +443,7 @@ export default function PositionManagement() {
                     <UserCheck size={15} /> Add Candidates
                   </Link>
                 )}
-                {canEdit && (
+                {canAdd && (
                   <button onClick={() => { setShowAdd(v => !v); setSaveErr(''); setSaveMsg(''); }}
                     style={{
                       display: 'flex', alignItems: 'center', gap: '6px',
@@ -447,7 +459,7 @@ export default function PositionManagement() {
             </div>
 
             {/* Add form */}
-            {showAdd && canEdit && (
+            {showAdd && canAdd && (
               <form onSubmit={handleAdd} style={{
                 backgroundColor: C.white, borderRadius: '16px', padding: '24px',
                 border: `1px solid ${C.creamBorder}`, marginBottom: '24px',
@@ -525,7 +537,7 @@ export default function PositionManagement() {
                 <ListPlus size={36} color={C.creamBorder} style={{ margin: '0 auto 14px' }} />
                 <p style={{ fontWeight: 700, color: C.greenPrimary, marginBottom: '6px' }}>No positions yet</p>
                 <p style={{ fontSize: '13px', color: C.textMuted }}>
-                  {canEdit
+                  {canAdd
                     ? 'Click "Add Position" above to create the first one.'
                     : 'No positions have been created for this election.'}
                 </p>
