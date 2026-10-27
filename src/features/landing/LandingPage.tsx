@@ -1,13 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ChevronRight, Menu, X,
   Users, Vote, CheckCircle, BarChart2,
-  GraduationCap, Building2, Dumbbell,
-  Home, BookOpen, Music, UtensilsCrossed,
   ShieldCheck, Zap, Trophy,
 } from 'lucide-react';
-
+import { supabase } from '../../lib/supabase';
 import { C } from '../../lib/tokens';
 
 /* ── Shared logo component ─────────────────────────────────── */
@@ -19,17 +17,7 @@ function Logo({ size = 40 }: { size?: number }) {
   );
 }
 
-/* ── Data ──────────────────────────────────────────────────── */
-const POSITIONS = [
-  { role: 'School Prefect',        Icon: GraduationCap,   houseOnly: false },
-  { role: 'Compound Prefect',      Icon: Building2,       houseOnly: false },
-  { role: 'Sports Prefect',        Icon: Dumbbell,        houseOnly: false },
-  { role: 'House Captain',         Icon: Home,            houseOnly: true  },
-  { role: 'School Chaplain',       Icon: BookOpen,        houseOnly: false },
-  { role: 'Entertainment Prefect', Icon: Music,           houseOnly: false },
-  { role: 'Dining Hall Prefect',   Icon: UtensilsCrossed, houseOnly: false },
-];
-
+/* ── Static data ───────────────────────────────────────────── */
 const STEPS = [
   { num: 1, Icon: Users,       title: 'Enter Student ID',    desc: 'Use the student ID printed on your school ID card.' },
   { num: 2, Icon: CheckCircle, title: 'Get Your Credential', desc: 'A unique one-time voting credential is generated for you.' },
@@ -43,9 +31,71 @@ const HIGHLIGHTS = [
   { Icon: Trophy,      title: 'Verified Results',   desc: 'Results published only after IT Coordinator verification and approval.' },
 ];
 
+/* ── Types ─────────────────────────────────────────────────── */
+interface LiveElection {
+  id:     string;
+  title:  string;
+  status: string;
+}
+
+interface LivePosition {
+  id:         string;
+  title:      string;
+  role_group: string;
+  gender_scope: string;
+  eligibility_scope: string;
+}
+
 /* ── Component ─────────────────────────────────────────────── */
 export default function LandingPage() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen,   setMenuOpen]   = useState(false);
+  const [election,   setElection]   = useState<LiveElection | null>(null);
+  const [positions,  setPositions]  = useState<LivePosition[]>([]);
+  const [loadingElec, setLoadingElec] = useState(true);
+
+  // Load live election and its positions
+  useEffect(() => {
+    async function loadLiveData() {
+      // Get any active election (open, approved, or published)
+      const { data: elections } = await supabase
+        .from('elections')
+        .select('id, title, status')
+        .in('status', ['open', 'approved', 'published'])
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      const el = elections?.[0] ?? null;
+      setElection(el as LiveElection | null);
+
+      if (el) {
+        const { data: posData } = await supabase
+          .from('positions')
+          .select('id, title, role_group, gender_scope, eligibility_scope')
+          .eq('election_id', el.id)
+          .order('sort_order');
+        setPositions((posData as LivePosition[]) ?? []);
+      }
+
+      setLoadingElec(false);
+    }
+    loadLiveData();
+  }, []);
+
+  // Build role groups for the positions section
+  const roleGroups = [...new Map(
+    positions.map(p => [p.role_group, p])
+  ).values()];
+
+  // Status badge config
+  const statusBadge = loadingElec
+    ? { dot: '#a3d9b0', text: 'Loading…' }
+    : election?.status === 'open'
+    ? { dot: '#4ade80', text: '🗳 Voting is Open Now' }
+    : election?.status === 'approved'
+    ? { dot: '#fbbf24', text: 'Election Approved — Voting Opening Soon' }
+    : election?.status === 'published'
+    ? { dot: '#60a5fa', text: 'Results Published' }
+    : { dot: '#a3d9b0', text: 'No Active Election' };
 
   return (
     <div style={{ backgroundColor: C.creamBg, color: C.textPrimary, fontFamily: "'Inter', ui-sans-serif, sans-serif" }}>
@@ -138,7 +188,6 @@ export default function LandingPage() {
           background: `linear-gradient(150deg, ${C.greenDark} 0%, ${C.greenPrimary} 55%, #1e5c35 100%)`,
           color: '#fff', position: 'relative', overflow: 'hidden',
         }}>
-          {/* Subtle dot pattern */}
           <div aria-hidden="true" style={{
             position: 'absolute', inset: 0, opacity: 0.035,
             backgroundImage: 'radial-gradient(circle, #f5f0e8 1px, transparent 1px)',
@@ -150,7 +199,7 @@ export default function LandingPage() {
               <Logo size={80} />
             </div>
 
-            {/* Status badge */}
+            {/* Live status badge */}
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: '8px',
               padding: '6px 16px', borderRadius: '999px', marginBottom: '28px',
@@ -158,15 +207,15 @@ export default function LandingPage() {
               border: '1px solid rgba(245,240,232,0.3)',
               color: C.creamCard, fontSize: '12px', fontWeight: 600, letterSpacing: '0.5px',
             }}>
-              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#a3d9b0', flexShrink: 0 }} aria-hidden="true" />
-              Demo Mode — No Live Election Active
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: statusBadge.dot, flexShrink: 0 }} aria-hidden="true" />
+              {statusBadge.text}
             </div>
 
             <h1 id="hero-heading" style={{
               fontSize: 'clamp(30px, 5.5vw, 54px)',
               fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.5px', marginBottom: '16px',
             }}>
-              KAWSEC Prefect<br />
+              {election ? election.title : 'KAWSEC Prefect'}<br />
               <span style={{ color: C.creamCard }}>Elections</span>
             </h1>
 
@@ -257,59 +306,74 @@ export default function LandingPage() {
         {/* ── POSITIONS ──────────────────────────────────────── */}
         <section id="positions" aria-labelledby="positions-heading" style={{ backgroundColor: C.white, padding: '72px 24px' }}>
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <p style={{ textAlign: 'center', fontSize: '11px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: C.greenMid, marginBottom: '8px' }}>2026 Election</p>
-            <h2 id="positions-heading" style={{ textAlign: 'center', fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 800, color: C.greenPrimary, marginBottom: '10px' }}>Prefect Positions</h2>
+            <p style={{ textAlign: 'center', fontSize: '11px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', color: C.greenMid, marginBottom: '8px' }}>
+              {election ? election.title : 'Upcoming Election'}
+            </p>
+            <h2 id="positions-heading" style={{ textAlign: 'center', fontSize: 'clamp(22px, 3vw, 30px)', fontWeight: 800, color: C.greenPrimary, marginBottom: '10px' }}>
+              Ballot Positions
+            </h2>
             <p style={{ textAlign: 'center', fontSize: '14px', color: C.textMuted, maxWidth: '480px', margin: '0 auto 48px', lineHeight: 1.65 }}>
-              Every role is contested by a Male and Female candidate.
-              House Captains are elected by their respective house members only.
+              {positions.length > 0
+                ? `${positions.length} position${positions.length !== 1 ? 's' : ''} across ${roleGroups.length} role${roleGroups.length !== 1 ? 's' : ''} in this election.`
+                : 'Positions will be announced when the election is created.'}
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {POSITIONS.map(({ role, Icon, houseOnly }) => (
-                <div key={role} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '12px' }}>
-                  {(['Male', 'Female'] as const).map(gender => (
-                    <div key={gender} role="article" aria-label={`${role} — ${gender}`}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '14px',
-                        backgroundColor: C.creamBg, border: `1px solid ${C.creamBorder}`,
-                        borderRadius: '14px', padding: '14px 18px',
-                        transition: 'border-color 0.2s, background-color 0.2s',
-                      }}
-                      onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = C.greenMid; el.style.backgroundColor = C.creamCard; }}
-                      onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = C.creamBorder; el.style.backgroundColor = C.creamBg; }}
-                    >
-                      <div style={{
-                        width: '44px', height: '44px', borderRadius: '12px', backgroundColor: C.greenPrimary,
-                        flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      }} aria-hidden="true"><Icon size={20} color="#fff" /></div>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: '14px', color: C.textPrimary, marginBottom: '5px' }}>{role}</div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                          <span style={{
-                            fontSize: '11px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px',
-                            backgroundColor: gender === 'Male' ? C.greenLight : C.creamCard,
-                            color: gender === 'Male' ? C.greenPrimary : C.textMuted,
-                            border: `1px solid ${gender === 'Male' ? C.greenMid + '40' : C.creamBorder}`,
-                          }}>
-                            {gender === 'Male' ? '♂ Male' : '♀ Female'}
+            {loadingElec ? (
+              <div style={{ textAlign: 'center', padding: '32px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: `3px solid ${C.creamBorder}`, borderTopColor: C.greenPrimary, margin: '0 auto', animation: 'spin 0.8s linear infinite' }} />
+              </div>
+            ) : positions.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '48px', backgroundColor: C.creamCard, borderRadius: '16px', border: `1px solid ${C.creamBorder}` }}>
+                <p style={{ color: C.textMuted, fontSize: '14px' }}>No positions have been announced yet.</p>
+                <p style={{ color: C.textMuted, fontSize: '13px', marginTop: '6px' }}>Check back when the election is set up.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {positions.map(pos => (
+                  <div key={pos.id} role="article" aria-label={pos.title}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '14px',
+                      backgroundColor: C.creamBg, border: `1px solid ${C.creamBorder}`,
+                      borderRadius: '14px', padding: '14px 18px',
+                      transition: 'border-color 0.2s, background-color 0.2s',
+                    }}
+                    onMouseEnter={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = C.greenMid; el.style.backgroundColor = C.creamCard; }}
+                    onMouseLeave={e => { const el = e.currentTarget as HTMLDivElement; el.style.borderColor = C.creamBorder; el.style.backgroundColor = C.creamBg; }}
+                  >
+                    {/* Gender dot */}
+                    <div style={{
+                      width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0,
+                      backgroundColor: pos.gender_scope === 'male' ? '#3b82f6' : pos.gender_scope === 'female' ? '#ec4899' : C.greenMid,
+                    }} aria-hidden="true" />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: C.textPrimary }}>{pos.title}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 600, color: C.textMuted }}>{pos.role_group}</span>
+                        <span style={{ fontSize: '11px', color: C.creamBorder }}>·</span>
+                        <span style={{
+                          fontSize: '11px', fontWeight: 700, padding: '1px 8px', borderRadius: '999px',
+                          backgroundColor: pos.gender_scope === 'male' ? '#eff6ff' : pos.gender_scope === 'female' ? '#fdf2f8' : C.greenLight,
+                          color: pos.gender_scope === 'male' ? '#1d4ed8' : pos.gender_scope === 'female' ? '#be185d' : C.greenPrimary,
+                        }}>
+                          {pos.gender_scope === 'male' ? '♂ Male' : pos.gender_scope === 'female' ? '♀ Female' : 'All'}
+                        </span>
+                        {pos.eligibility_scope === 'house' && (
+                          <span style={{ fontSize: '11px', fontWeight: 600, padding: '1px 8px', borderRadius: '999px', backgroundColor: '#fef9ec', color: '#7a5c00', border: '1px solid #f0d880' }}>
+                            House Only
                           </span>
-                          {houseOnly && (
-                            <span style={{ fontSize: '11px', fontWeight: 600, padding: '2px 8px', borderRadius: '999px', backgroundColor: '#fef9ec', color: '#7a5c00', border: '1px solid #f0d880' }}>
-                              House Only
-                            </span>
-                          )}
-                          <span style={{ fontSize: '12px', color: C.textMuted, fontStyle: 'italic' }}>Candidates TBA</span>
-                        </div>
+                        )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              ))}
-            </div>
+                  </div>
+                ))}
+              </div>
+            )}
 
-            <p style={{ textAlign: 'center', marginTop: '32px', fontSize: '13px', color: C.textMuted }}>
-              Total: <strong style={{ color: C.greenPrimary }}>14 ballot positions</strong> across 7 prefect roles.
-            </p>
+            {positions.length > 0 && (
+              <p style={{ textAlign: 'center', marginTop: '28px', fontSize: '13px', color: C.textMuted }}>
+                Total: <strong style={{ color: C.greenPrimary }}>{positions.length} ballot position{positions.length !== 1 ? 's' : ''}</strong> across {roleGroups.length} role{roleGroups.length !== 1 ? 's' : ''}.
+              </p>
+            )}
           </div>
         </section>
 
@@ -351,6 +415,7 @@ export default function LandingPage() {
       </footer>
 
       <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 767px) {
           .nav-desktop { display: none !important; }
           .nav-mobile-btn { display: flex !important; }
