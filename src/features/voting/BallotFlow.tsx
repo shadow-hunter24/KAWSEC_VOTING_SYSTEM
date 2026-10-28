@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ChevronRight, ChevronLeft, User, FileText, CheckCircle, AlertTriangle, Clock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
@@ -103,18 +103,43 @@ function CandidateCard({ candidate, selected, onSelect }: {
 }
 
 /* ── Progress bar ───────────────────────────────────────────── */
-function ProgressBar({ current, total }: { current: number; total: number }) {
+function ProgressBar({ current, total, roleGroup, roleGroupCurrent, roleGroupTotal }: {
+  current: number; total: number;
+  roleGroup: string; roleGroupCurrent: number; roleGroupTotal: number;
+}) {
   const pct = Math.round((current / total) * 100);
   return (
-    <div style={{ marginBottom: '28px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-        <span style={{ fontSize: '12px', fontWeight: 600, color: C.textMuted }}>Position {current} of {total}</span>
+    <div style={{ marginBottom: '24px' }}>
+      {/* Role group indicator */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        marginBottom: '8px',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{
+            fontSize: '11px', fontWeight: 800, textTransform: 'uppercase',
+            letterSpacing: '1.5px', color: C.greenMid,
+          }}>{roleGroup}</span>
+          <span style={{
+            fontSize: '11px', padding: '2px 8px', borderRadius: '999px',
+            backgroundColor: C.greenLight, color: C.greenPrimary, fontWeight: 700,
+          }}>{roleGroupCurrent} of {roleGroupTotal}</span>
+        </div>
         <span style={{ fontSize: '12px', fontWeight: 600, color: C.greenPrimary }}>{pct}%</span>
       </div>
+      {/* Overall progress bar */}
       <div style={{ height: '6px', borderRadius: '999px', backgroundColor: C.creamBorder, overflow: 'hidden' }}>
-        <div style={{ height: '100%', borderRadius: '999px', backgroundColor: C.greenPrimary, width: `${pct}%`, transition: 'width 0.3s ease' }}
-          role="progressbar" aria-valuenow={current} aria-valuemin={0} aria-valuemax={total} />
+        <div style={{
+          height: '100%', borderRadius: '999px', backgroundColor: C.greenPrimary,
+          width: `${pct}%`, transition: 'width 0.3s ease',
+        }}
+          role="progressbar"
+          aria-valuenow={current} aria-valuemin={0} aria-valuemax={total}
+          aria-valuetext={`Position ${current} of ${total}, ${pct}% complete`} />
       </div>
+      <p style={{ fontSize: '11px', color: C.textMuted, marginTop: '5px' }}>
+        Overall: position {current} of {total}
+      </p>
     </div>
   );
 }
@@ -190,7 +215,37 @@ export default function BallotFlow() {
   const position = positions[currentIdx];
   const totalPos = positions.length;
   const selected = position ? selections[position.id] : undefined;
-  const isLast   = currentIdx === totalPos - 1;
+
+  // ── Role group context ────────────────────────────────────
+  // Group positions by role_group in order, so the student sees
+  // all positions under a role group together (e.g. Boys then Girls)
+  const roleGroupPositions = useMemo(() => {
+    const groups: { name: string; positions: PositionWithCandidates[] }[] = [];
+    positions.forEach(p => {
+      const last = groups[groups.length - 1];
+      if (last && last.name === p.role_group) {
+        last.positions.push(p);
+      } else {
+        groups.push({ name: p.role_group, positions: [p] });
+      }
+    });
+    return groups;
+  }, [positions]);
+
+  // Find which role group the current position belongs to
+  const currentRoleGroup = position?.role_group ?? '';
+  const currentGroup     = roleGroupPositions.find(g => g.name === currentRoleGroup);
+  // Index of current position within its role group
+  const posInGroup       = currentGroup ? currentGroup.positions.findIndex(p => p.id === position?.id) + 1 : 1;
+  const totalInGroup     = currentGroup?.positions.length ?? 1;
+  // Which role group number are we on overall
+  const groupIndex       = roleGroupPositions.findIndex(g => g.name === currentRoleGroup) + 1;
+  const totalGroups      = roleGroupPositions.length;
+
+  // Is this the last position in its role group?
+  const isLastInGroup = posInGroup === totalInGroup;
+  // Is this the very last position overall?
+  const isLast = currentIdx === totalPos - 1;
 
   function handleSelect(candidateId: string) {
     if (!position) return;
@@ -211,7 +266,6 @@ export default function BallotFlow() {
     if (currentIdx > 0) { setCurrentIdx(i => i - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }
   }
 
-  const genderColor = (s: string) => s === 'male' ? '#3b82f6' : s === 'female' ? '#ec4899' : C.textMuted;
   const isUrgent   = secondsRemaining <= 60;
   const isWarning  = secondsRemaining <= 120;
 
@@ -288,22 +342,64 @@ export default function BallotFlow() {
         {/* Ballot */}
         {!loading && !alreadyVoted && !error && position && (
           <>
-            <ProgressBar current={currentIdx + 1} total={totalPos} />
+            <ProgressBar
+              current={currentIdx + 1}
+              total={totalPos}
+              roleGroup={`${currentRoleGroup} — Group ${groupIndex} of ${totalGroups}`}
+              roleGroupCurrent={posInGroup}
+              roleGroupTotal={totalInGroup}
+            />
+
+            {/* Role group context banner — shown when entering a new role group */}
+            {posInGroup === 1 && totalInGroup > 1 && (
+              <div style={{
+                padding: '12px 16px', borderRadius: '12px', marginBottom: '16px',
+                backgroundColor: C.greenLight, border: `1px solid ${C.greenMid}40`,
+                display: 'flex', alignItems: 'center', gap: '10px',
+              }}>
+                <span style={{ fontSize: '20px' }}>🗳</span>
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: '13px', color: C.greenPrimary }}>
+                    Now voting: {currentRoleGroup}
+                  </p>
+                  <p style={{ fontSize: '12px', color: C.textMuted }}>
+                    You will vote for {totalInGroup} position{totalInGroup > 1 ? 's' : ''} in this group — first the {positions[currentIdx].gender_scope === 'male' ? 'Male' : positions[currentIdx].gender_scope === 'female' ? 'Female' : ''} slot, then the next.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Role group completion banner — shown when finishing a group */}
+            {isLastInGroup && !isLast && posInGroup > 1 && (
+              <div style={{
+                padding: '10px 14px', borderRadius: '10px', marginBottom: '16px',
+                backgroundColor: '#eff6ff', border: '1px solid #bfdbfe',
+                display: 'flex', alignItems: 'center', gap: '8px',
+              }}>
+                <CheckCircle size={15} color="#1d4ed8" />
+                <p style={{ fontSize: '12px', color: '#1d4ed8', fontWeight: 600 }}>
+                  After this, you move to the next role group.
+                </p>
+              </div>
+            )}
 
             <div style={{ marginBottom: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: genderColor(position.gender_scope), flexShrink: 0 }} aria-hidden="true" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                <div style={{
+                  width: '10px', height: '10px', borderRadius: '50%',
+                  backgroundColor: position.gender_scope === 'male' ? '#3b82f6' : position.gender_scope === 'female' ? '#ec4899' : C.textMuted,
+                  flexShrink: 0,
+                }} aria-hidden="true" />
                 <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: C.textMuted }}>
-                  {position.role_group}
+                  {position.role_group} · {position.gender_scope === 'male' ? 'Male candidates' : position.gender_scope === 'female' ? 'Female candidates' : 'All candidates'}
                 </p>
               </div>
               <h1 style={{ fontWeight: 800, fontSize: 'clamp(20px, 4vw, 28px)', color: C.greenPrimary, lineHeight: 1.2 }}>
                 {position.title}
               </h1>
               <p style={{ fontSize: '13px', color: C.textMuted, marginTop: '6px' }}>
-                Select one candidate. Your vote is final after submission.
+                Select one candidate below. You cannot change this after submission.
               </p>
-              {/* ETHICS: Ballot secrecy reassurance */}
               <p style={{ fontSize: '12px', color: C.greenMid, marginTop: '4px', fontStyle: 'italic' }}>
                 🔒 Your vote is secret and cannot be traced back to you.
               </p>
@@ -351,7 +447,11 @@ export default function BallotFlow() {
                 boxShadow: selected ? '0 4px 16px rgba(26,77,46,0.2)' : 'none',
                 transition: 'all 0.15s',
               }} aria-disabled={!selected}>
-                {isLast ? 'Review My Ballot' : 'Next Position'}
+                {isLast
+                  ? 'Review My Ballot'
+                  : isLastInGroup
+                  ? `Next: ${roleGroupPositions[groupIndex]?.name ?? 'Next Position'}`
+                  : `Next: ${positions[currentIdx + 1]?.title ?? 'Next Position'}`}
                 <ChevronRight size={17} />
               </button>
             </div>
