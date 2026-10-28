@@ -40,9 +40,22 @@ export default function ElectionSettings() {
   const [description, setDescription] = useState('');
 
   async function loadElections() {
-    const { data } = await supabase
+    const { data: elData } = await supabase
       .from('elections').select('*').order('created_at', { ascending: false });
-    setElections((data as Election[]) ?? []);
+    const list = (elData ?? []) as Election[];
+
+    // For each draft election, load position + approved candidate counts
+    const enriched = await Promise.all(list.map(async el => {
+      if (el.status !== 'draft') return { ...el, positionCount: null, candidateCount: null };
+      const [{ count: posCount }, { count: candCount }] = await Promise.all([
+        supabase.from('positions').select('*', { count: 'exact', head: true }).eq('election_id', el.id),
+        supabase.from('candidates').select('positions!inner(election_id)', { count: 'exact', head: true })
+          .eq('positions.election_id', el.id).eq('status', 'approved'),
+      ]);
+      return { ...el, positionCount: posCount ?? 0, candidateCount: candCount ?? 0 };
+    }));
+
+    setElections(enriched as Election[]);
     setLoading(false);
   }
 
@@ -228,6 +241,77 @@ export default function ElectionSettings() {
                         </p>
                       )}
                       {el.description && <p style={{ fontSize: '12px', color: C.textMuted, marginTop: '4px' }}>{el.description}</p>}
+
+                      {/* Draft checklist — guide admin through setup steps */}
+                      {el.status === 'draft' && (
+                        <div style={{ marginTop: '14px', padding: '14px 16px', borderRadius: '12px', backgroundColor: '#fffbeb', border: '1px solid #fcd34d' }}>
+                          <p style={{ fontSize: '12px', fontWeight: 700, color: '#92400e', marginBottom: '10px' }}>
+                            ⚡ Complete these steps before approving:
+                          </p>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '7px' }}>
+                            {/* Step 1 — Positions */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{
+                                width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '11px', fontWeight: 800,
+                                backgroundColor: (el as Election & { positionCount?: number }).positionCount ? C.greenPrimary : C.creamBorder,
+                                color: '#fff',
+                              }}>
+                                {(el as Election & { positionCount?: number }).positionCount ? '✓' : '1'}
+                              </span>
+                              <span style={{ fontSize: '12px', color: (el as Election & { positionCount?: number }).positionCount ? C.greenPrimary : '#92400e', fontWeight: 600 }}>
+                                Add ballot positions
+                                {(el as Election & { positionCount?: number }).positionCount
+                                  ? ` — ${(el as Election & { positionCount?: number }).positionCount} position${(el as Election & { positionCount?: number }).positionCount !== 1 ? 's' : ''} added ✓`
+                                  : ' — none yet'}
+                              </span>
+                              {!(el as Election & { positionCount?: number }).positionCount && (
+                                <Link to="/admin/positions" style={{ fontSize: '11px', fontWeight: 700, color: C.greenPrimary, textDecoration: 'none', marginLeft: 'auto', padding: '3px 10px', borderRadius: '6px', backgroundColor: C.greenLight }}>
+                                  Go →
+                                </Link>
+                              )}
+                            </div>
+
+                            {/* Step 2 — Candidates */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{
+                                width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '11px', fontWeight: 800,
+                                backgroundColor: (el as Election & { candidateCount?: number }).candidateCount ? C.greenPrimary : C.creamBorder,
+                                color: '#fff',
+                              }}>
+                                {(el as Election & { candidateCount?: number }).candidateCount ? '✓' : '2'}
+                              </span>
+                              <span style={{ fontSize: '12px', color: (el as Election & { candidateCount?: number }).candidateCount ? C.greenPrimary : '#92400e', fontWeight: 600 }}>
+                                Add & approve candidates
+                                {(el as Election & { candidateCount?: number }).candidateCount
+                                  ? ` — ${(el as Election & { candidateCount?: number }).candidateCount} approved ✓`
+                                  : ' — none approved yet'}
+                              </span>
+                              {!(el as Election & { candidateCount?: number }).candidateCount && (
+                                <Link to="/admin/candidates" style={{ fontSize: '11px', fontWeight: 700, color: C.greenPrimary, textDecoration: 'none', marginLeft: 'auto', padding: '3px 10px', borderRadius: '6px', backgroundColor: C.greenLight }}>
+                                  Go →
+                                </Link>
+                              )}
+                            </div>
+
+                            {/* Step 3 — Approve */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{
+                                width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: '11px', fontWeight: 800,
+                                backgroundColor: C.creamBorder, color: '#fff',
+                              }}>3</span>
+                              <span style={{ fontSize: '12px', color: '#92400e', fontWeight: 600 }}>
+                                Come back here → click "Approve & Generate Entitlements"
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
