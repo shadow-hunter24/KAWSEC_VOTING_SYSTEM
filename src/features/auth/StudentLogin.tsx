@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { ChevronRight, CheckCircle, User, Clock, AlertTriangle } from 'lucide-react';
+import { ChevronRight, CheckCircle, User, Clock, AlertTriangle, Copy } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useVotingSession } from '../../contexts/VotingSessionContext';
 import { C } from '../../lib/tokens';
@@ -28,6 +28,7 @@ export default function StudentLogin() {
   const [step,        setStep]        = useState<'id' | 'confirm' | 'credential'>('id');
   const [studentId,   setStudentId]   = useState('');
   const [credential,  setCredential]  = useState('');
+  const [generatedCredential, setGeneratedCredential] = useState(''); // S-1: store generated credential for display
   const [loading,     setLoading]     = useState(false);
   const [error,       setError]       = useState('');
   const [studentInfo, setStudentInfo] = useState<StudentInfo | null>(null);
@@ -35,7 +36,7 @@ export default function StudentLogin() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '12px 14px', borderRadius: '10px',
-    border: `1.5px solid ${C.creamBorder}`, fontSize: '14px',
+    border: `1.5px solid ${C.creamBorder}`, fontSize: '16px', // S-6: 16px min to prevent iOS zoom
     color: '#1a1a1a', backgroundColor: C.creamBg,
     outline: 'none', fontFamily: 'inherit', transition: 'border-color 0.15s',
   };
@@ -140,6 +141,9 @@ export default function StudentLogin() {
         setCredential(data.credential);
       }
 
+      // S-1: Always display the generated credential so the student can read it
+      setGeneratedCredential(data.credential ?? '');
+
       setStep('credential');
     } catch {
       setError('Network error. Please try again.');
@@ -242,11 +246,11 @@ export default function StudentLogin() {
               </div>
             )}
 
-            {/* Step indicators */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}
+            {/* Step indicators — S-3: semantic <ol> */}
+            <ol style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '24px', listStyle: 'none', padding: 0, margin: '0 0 24px' }}
               aria-label="Login steps">
               {['Enter ID', 'Confirm', 'Credential'].map((label, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
                     <div style={{
                       width: '26px', height: '26px', borderRadius: '50%',
@@ -260,9 +264,9 @@ export default function StudentLogin() {
                     <span style={{ fontSize: '9px', color: i === stepIdx ? C.greenPrimary : C.textMuted, fontWeight: i === stepIdx ? 700 : 400 }}>{label}</span>
                   </div>
                   {i < 2 && <div style={{ width: '32px', height: '2px', borderRadius: '2px', backgroundColor: i < stepIdx ? C.greenPrimary : C.creamBorder, marginBottom: '14px', transition: 'background-color 0.3s' }} />}
-                </div>
+                </li>
               ))}
-            </div>
+            </ol>
 
             {/* Error */}
             {error && (
@@ -283,8 +287,8 @@ export default function StudentLogin() {
                   <input id="student-id" type="text" value={studentId}
                     onChange={e => setStudentId(e.target.value.toUpperCase())}
                     placeholder="e.g. KAWSEC-SCI-2024-0001" style={{ ...inputStyle, fontFamily: 'monospace', letterSpacing: '1px' }}
-                    onFocus={e => { e.currentTarget.style.borderColor = C.greenPrimary; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = C.greenPrimary; e.currentTarget.style.boxShadow = C.focusRing; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; e.currentTarget.style.boxShadow = 'none'; }}
                     aria-describedby="id-hint" autoFocus autoComplete="off" disabled={loading} />
                   <p id="id-hint" style={{ fontSize: '12px', color: C.textMuted, marginTop: '6px' }}>
                     Format: KAWSEC-[DEPT]-[YEAR]-[NUMBER]
@@ -341,10 +345,22 @@ export default function StudentLogin() {
                   Is this you?
                 </p>
 
+                {/* S-5: One-time credential disclaimer */}
+                <div style={{
+                  padding: '10px 14px', borderRadius: '8px', marginBottom: '14px',
+                  backgroundColor: C.warnBg, border: `1px solid ${C.warnBorder}`,
+                  fontSize: '12px', color: C.warnYellow, lineHeight: 1.5,
+                }}>
+                  <strong>Note:</strong> Confirming will generate a one-time voting credential.
+                  If you already received one, use that instead of confirming again.
+                </div>
+
                 <div style={{ display: 'flex', gap: '10px' }}>
+                  {/* S-7: disable back button while loading */}
                   <button
                     onClick={() => { setStep('id'); setStudentInfo(null); setError(''); }}
-                    style={{ flex: 1, padding: '12px', borderRadius: '10px', border: `1.5px solid ${C.creamBorder}`, background: 'none', color: C.textMuted, fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}
+                    disabled={loading}
+                    style={{ flex: 1, padding: '12px', borderRadius: '10px', border: `1.5px solid ${C.creamBorder}`, background: 'none', color: C.textMuted, fontSize: '14px', fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.5 : 1 }}
                   >
                     No, go back
                   </button>
@@ -370,7 +386,7 @@ export default function StudentLogin() {
             {/* ── STEP 3: Enter credential ─────────────────── */}
             {step === 'credential' && (
               <form onSubmit={handleCredentialSubmit} noValidate>
-                <h2 style={{ fontWeight: 700, fontSize: '16px', color: C.greenPrimary, marginBottom: '4px' }}>Enter Your Voting Credential</h2>
+                <h2 style={{ fontWeight: 700, fontSize: '18px', color: C.greenPrimary, marginBottom: '4px' }}>Enter Your Voting Credential</h2>
 
                 {/* Confirmed identity banner */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 12px', borderRadius: '8px', marginBottom: '16px', backgroundColor: C.greenLight, border: `1px solid ${C.greenPrimary}20` }}>
@@ -379,18 +395,44 @@ export default function StudentLogin() {
                   <span style={{ fontSize: '12px', color: C.textMuted }}>· {studentInfo?.class_name}</span>
                 </div>
 
+                {/* S-1: Display the generated credential prominently */}
+                {generatedCredential && (
+                  <div style={{
+                    padding: '16px', borderRadius: '12px', marginBottom: '20px',
+                    backgroundColor: C.greenLight, border: `2px solid ${C.greenPrimary}`,
+                    textAlign: 'center',
+                  }}>
+                    <p style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: C.textMuted, marginBottom: '8px' }}>
+                      Your One-Time Voting Credential
+                    </p>
+                    <p style={{ fontFamily: 'monospace', fontSize: '28px', fontWeight: 800, letterSpacing: '6px', color: C.greenPrimary, marginBottom: '8px' }}>
+                      {generatedCredential}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => { navigator.clipboard?.writeText(generatedCredential); }}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: C.greenMid, fontWeight: 600 }}
+                      aria-label="Copy credential to clipboard"
+                    >
+                      <Copy size={13} /> Tap to copy
+                    </button>
+                    <p style={{ fontSize: '11px', color: C.textMuted, marginTop: '8px', lineHeight: 1.5 }}>
+                      This credential is shown only once. Enter it below and keep it private.
+                    </p>
+                  </div>
+                )}
+
                 <div style={{ marginBottom: '20px' }}>
                   <label htmlFor="credential" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: C.greenPrimary, marginBottom: '6px' }}>Voting Credential</label>
                   <input id="credential" type="text" value={credential}
                     onChange={e => setCredential(e.target.value.toUpperCase())}
                     placeholder="e.g. XXXX-XXXX"
                     style={{ ...inputStyle, fontFamily: 'monospace', letterSpacing: '3px', fontSize: '20px', textAlign: 'center' }}
-                    onFocus={e => { e.currentTarget.style.borderColor = C.greenPrimary; }}
-                    onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; }}
+                    onFocus={e => { e.currentTarget.style.borderColor = C.greenPrimary; e.currentTarget.style.boxShadow = C.focusRing; }}
+                    onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; e.currentTarget.style.boxShadow = 'none'; }}
                     aria-describedby="cred-hint" autoFocus autoComplete="off" disabled={loading} maxLength={9} />
                   <p id="cred-hint" style={{ fontSize: '12px', color: C.textMuted, marginTop: '6px' }}>
-                    Your credential appeared on screen after confirming your identity.
-                    Contact the IT Coordinator if you didn't see it.
+                    Enter the credential shown above. Contact the IT Coordinator if you need help.
                   </p>
                   {import.meta.env.DEV && credential && (
                     <div role="alert" style={{
@@ -414,8 +456,8 @@ export default function StudentLogin() {
                   {loading ? 'Verifying…' : <><span>Access Ballot</span><ChevronRight size={17} /></>}
                 </button>
 
-                <button type="button" onClick={() => { setStep('id'); setError(''); setCredential(''); setStudentInfo(null); }}
-                  style={{ width: '100%', marginTop: '12px', padding: '10px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: C.textMuted }}>
+                <button type="button" onClick={() => { setStep('id'); setError(''); setCredential(''); setStudentInfo(null); setGeneratedCredential(''); }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '12px', padding: '8px 12px', background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: C.textMuted }}>
                   ← Start Over
                 </button>
               </form>

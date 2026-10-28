@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';import { Link } from 'react-router-dom';
 import { Plus, Trash2, AlertTriangle, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { C } from '../../lib/tokens';
@@ -16,8 +15,21 @@ function DepartmentSection({ dept }: { dept: Department }) {
   const [loading,   setLoading]   = useState(false);
   const [adding,    setAdding]    = useState(false);
   const [deleting,  setDeleting]  = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null); // CM-4: inline confirm
   const [msg,       setMsg]       = useState('');
   const [err,       setErr]       = useState('');
+
+  // CM-2: Auto-dismiss messages after 4 seconds
+  useEffect(() => {
+    if (!msg) return;
+    const t = setTimeout(() => setMsg(''), 4000);
+    return () => clearTimeout(t);
+  }, [msg]);
+  useEffect(() => {
+    if (!err) return;
+    const t = setTimeout(() => setErr(''), 4000);
+    return () => clearTimeout(t);
+  }, [err]);
 
   // New class form state
   const [newName,   setNewName]   = useState('');
@@ -63,7 +75,12 @@ function DepartmentSection({ dept }: { dept: Department }) {
   }
 
   async function handleDelete(cls: Class) {
-    if (!window.confirm(`Delete "${cls.name}"? This will fail if students are assigned to it.`)) return;
+    // CM-4: inline confirmation — first click sets confirm state, second executes
+    if (confirmDelete !== cls.id) {
+      setConfirmDelete(cls.id);
+      return;
+    }
+    setConfirmDelete(null);
     setDeleting(cls.id); setErr(''); setMsg('');
 
     const { error } = await supabase.from('classes').delete().eq('id', cls.id);
@@ -100,6 +117,7 @@ function DepartmentSection({ dept }: { dept: Department }) {
           backgroundColor: open ? C.creamCard : C.white, textAlign: 'left',
         }}
         aria-expanded={open}
+        aria-controls={`dept-content-${dept.id}`}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div style={{ width: '36px', height: '36px', borderRadius: '9px', backgroundColor: C.greenLight, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -115,9 +133,9 @@ function DepartmentSection({ dept }: { dept: Department }) {
         {open ? <ChevronUp size={18} color={C.textMuted} /> : <ChevronDown size={18} color={C.textMuted} />}
       </button>
 
-      {/* Expanded content */}
+      {/* Expanded content — CM-3: id matches aria-controls */}
       {open && (
-        <div style={{ borderTop: `1px solid ${C.creamBorder}`, padding: '20px' }}>
+        <div id={`dept-content-${dept.id}`} style={{ borderTop: `1px solid ${C.creamBorder}`, padding: '20px' }}>
 
           {/* Feedback */}
           {msg && (
@@ -210,18 +228,23 @@ function DepartmentSection({ dept }: { dept: Department }) {
                       <button
                         onClick={() => handleDelete(cls)}
                         disabled={deleting === cls.id}
-                        aria-label={`Delete ${cls.name}`}
+                        aria-label={confirmDelete === cls.id ? `Confirm delete ${cls.name}` : `Delete ${cls.name}`}
                         style={{
-                          background: 'none', border: 'none', cursor: 'pointer',
-                          padding: '4px', borderRadius: '6px', color: '#dc262660',
-                          display: 'flex', alignItems: 'center',
+                          background: 'none', border: confirmDelete === cls.id ? `1px solid #dc2626` : 'none',
+                          cursor: 'pointer',
+                          padding: '4px 6px', borderRadius: '6px',
+                          color: confirmDelete === cls.id ? '#dc2626' : '#dc262660',
+                          display: 'flex', alignItems: 'center', gap: '3px',
+                          fontSize: '11px', fontWeight: confirmDelete === cls.id ? 700 : 400,
                           transition: 'color 0.15s',
                         }}
                         onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#dc2626'; }}
-                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#dc262660'; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = confirmDelete === cls.id ? '#dc2626' : '#dc262660'; }}
                       >
                         {deleting === cls.id
                           ? <span style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px solid #dc262640', borderTopColor: '#dc2626', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} />
+                          : confirmDelete === cls.id
+                          ? <>Confirm?</>
                           : <Trash2 size={14} />}
                       </button>
                     </div>
@@ -288,8 +311,8 @@ export default function ClassManagement() {
           <p style={{ textAlign: 'center', color: C.textMuted, padding: '48px' }}>Loading departments…</p>
         ) : departments.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '64px' }}>
-            <p style={{ color: C.textMuted, fontSize: '14px', marginBottom: '12px' }}>No departments found.</p>
-            <p style={{ fontSize: '13px', color: C.textMuted }}>Run migration 0008 in Supabase SQL Editor first.</p>
+            <p style={{ color: C.textMuted, fontSize: '14px', marginBottom: '12px' }}>No departments configured.</p>
+            <p style={{ fontSize: '13px', color: C.textMuted }}>Please contact the system administrator to set up departments.</p>
           </div>
         ) : (
           <>

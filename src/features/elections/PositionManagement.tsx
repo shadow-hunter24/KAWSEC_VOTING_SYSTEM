@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Plus, Edit2, Trash2, Check, X, AlertTriangle, ChevronDown, ChevronUp,
@@ -53,6 +53,26 @@ function EditModal({
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState('');
 
+  // PM-5: focus trap — focus first element on open and keep Tab within the modal
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = dialogRef.current;
+    if (!node) return;
+    const focusable = node.querySelectorAll<HTMLElement>('input, select, textarea, button:not([disabled])');
+    focusable[0]?.focus();
+  }, []);
+  function handleTrap(e: React.KeyboardEvent) {
+    if (e.key !== 'Tab') return;
+    const node = dialogRef.current;
+    if (!node) return;
+    const focusable = Array.from(node.querySelectorAll<HTMLElement>('input, select, textarea, button:not([disabled])'));
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.title.trim()) { setError('Title is required.'); return; }
@@ -100,7 +120,7 @@ function EditModal({
       }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div style={{
+      <div ref={dialogRef} onKeyDown={handleTrap} style={{
         backgroundColor: C.creamBg, borderRadius: '20px',
         width: '100%', maxWidth: '480px',
         boxShadow: '0 24px 64px rgba(15,45,26,0.35)',
@@ -220,6 +240,7 @@ export default function PositionManagement() {
   const [editing,  setEditing]  = useState<Position | null>(null);
   const [saveMsg,  setSaveMsg]  = useState('');
   const [saveErr,  setSaveErr]  = useState('');
+  const [confirmDelete, setConfirmDelete] = useState<Position | null>(null); // PM-3
 
   // Load elections + houses
   useEffect(() => {
@@ -306,7 +327,8 @@ export default function PositionManagement() {
       const count = entData?.entitlements_created ?? 0;
       setSaveMsg(`Role added: 2 positions created for "${roleName}". ${count} entitlements generated — eligible students can now vote on these positions.`);
     } catch {
-      setSaveMsg(`Role added: 2 positions created for "${roleName}". Run "Generate Entitlements" in Election Settings if students can't see them.`);
+      // PM-4: entitlement-generation failures must surface as errors, not success
+      setSaveErr(`2 positions created for "${roleName}", but entitlement generation failed. Run "Approve & Generate Entitlements" in Election Settings so students can see them.`);
     }
 
     setNewRoleName(''); setNewElig('school_wide'); setNewHouse('');
@@ -331,8 +353,8 @@ export default function PositionManagement() {
     return null;
   }
 
+  // PM-3: confirmation handled by inline modal (no window.confirm)
   async function handleDelete(pos: Position) {
-    if (!window.confirm(`Delete "${pos.title}"? Any candidates for this position will also be removed.`)) return;
     setSaveErr(''); setSaveMsg('');
     const { error } = await supabase.from('positions').delete().eq('id', pos.id);
     if (error) {
@@ -409,11 +431,12 @@ export default function PositionManagement() {
           </div>
         ) : (
           <>
-            {/* Election selector */}
+            {/* Election selector — PM-6: associated label */}
             {elections.length >= 1 && (
               <div style={{ marginBottom: '24px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: C.greenPrimary, marginBottom: '6px' }}>Election</label>
+                <label htmlFor="position-election-select" style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: C.greenPrimary, marginBottom: '6px' }}>Election</label>
                 <select
+                  id="position-election-select"
                   value={activeElec}
                   onChange={e => setActiveElec(e.target.value)}
                   style={{ padding: '10px 14px', borderRadius: '10px', border: `1.5px solid ${C.creamBorder}`, fontSize: '14px', backgroundColor: C.white, cursor: 'pointer', minWidth: '300px' }}
@@ -603,7 +626,7 @@ export default function PositionManagement() {
                               <Edit2 size={13} /> Edit
                             </button>
                             <button
-                              onClick={() => handleDelete(pos)}
+                              onClick={() => { setSaveMsg(''); setSaveErr(''); setConfirmDelete(pos); }}
                               aria-label={`Delete ${pos.title}`}
                               style={{
                                 display: 'flex', alignItems: 'center', gap: '5px',
@@ -624,6 +647,37 @@ export default function PositionManagement() {
           </>
         )}
       </main>
+
+      {/* PM-3: delete confirmation modal */}
+      {confirmDelete && (
+        <div role="dialog" aria-modal="true" aria-labelledby="delete-pos-title"
+          onClick={e => { if (e.target === e.currentTarget) setConfirmDelete(null); }}
+          style={{ position: 'fixed', inset: 0, zIndex: 100, backgroundColor: 'rgba(15,45,26,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ backgroundColor: C.creamBg, borderRadius: '20px', width: '100%', maxWidth: '420px', boxShadow: '0 24px 64px rgba(15,45,26,0.35)', overflow: 'hidden' }}>
+            <div style={{ padding: '18px 24px', backgroundColor: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 id="delete-pos-title" style={{ color: '#fff', fontWeight: 800, fontSize: '16px' }}>Delete Position?</h2>
+              <button onClick={() => setConfirmDelete(null)} aria-label="Close" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.8)', padding: '4px' }}><X size={20} /></button>
+            </div>
+            <div style={{ padding: '24px' }}>
+              <p style={{ fontSize: '13px', color: C.textMuted, lineHeight: 1.6, marginBottom: '14px' }}>
+                Delete <strong style={{ color: C.greenPrimary }}>{confirmDelete.title}</strong>?
+              </p>
+              <div style={{ padding: '12px 14px', borderRadius: '10px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', marginBottom: '18px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                <AlertTriangle size={16} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />
+                <p style={{ fontSize: '12px', color: '#dc2626', lineHeight: 1.5 }}>
+                  Any candidates added for this position will also be removed. This cannot be undone.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={() => setConfirmDelete(null)} style={{ flex: 1, padding: '11px', borderRadius: '10px', border: `1.5px solid ${C.creamBorder}`, background: 'none', color: C.textMuted, fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={() => { const p = confirmDelete; setConfirmDelete(null); handleDelete(p); }} style={{ flex: 2, padding: '11px', borderRadius: '10px', border: 'none', backgroundColor: '#dc2626', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <Trash2 size={15} /> Delete Position
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Edit modal */}
       {editing && (

@@ -10,6 +10,7 @@ interface CompleteState {
   full_name:    string;
   ballot_count: number;
   election_id:  string;
+  submittedAt?: string; // C-1: capture time from BallotReview
 }
 
 export default function BallotComplete() {
@@ -93,9 +94,9 @@ export default function BallotComplete() {
           </p>
           {[
             { label: 'Voter',          value: state.full_name },
-            { label: 'Positions voted',value: String(state.ballot_count) },
+            { label: 'Positions voted',value: String(state.ballot_count ?? '—') }, // C-5: nullish fallback
             { label: 'Status',         value: '✓ Accepted', green: true },
-            { label: 'Time',           value: new Date().toLocaleTimeString() },
+            { label: 'Time',           value: state.submittedAt ? new Date(state.submittedAt).toLocaleTimeString() : new Date().toLocaleTimeString() }, // C-1
           ].map(({ label, value, green }) => (
             <div key={label} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
               <span style={{ fontSize: '13px', color: C.textMuted }}>{label}</span>
@@ -109,13 +110,13 @@ export default function BallotComplete() {
           </div>
         </div>
 
-        {/* Auto-logout countdown */}
+        {/* Auto-logout countdown — C-2: assertive when ≤3s */}
         <div style={{
           padding: '14px 20px', borderRadius: '12px', marginBottom: '20px',
           backgroundColor: countdown <= 3 ? '#fef2f2' : C.greenLight,
           border: `1px solid ${countdown <= 3 ? '#fca5a5' : C.greenPrimary + '30'}`,
           transition: 'background-color 0.5s',
-        }} role="status" aria-live="polite">
+        }} role="status" aria-live={countdown <= 3 ? 'assertive' : 'polite'}>
           <p style={{ fontSize: '13px', fontWeight: 600, color: countdown <= 3 ? '#dc2626' : C.greenPrimary }}>
             {countdown <= 3
               ? `Logging out in ${countdown}…`
@@ -123,7 +124,7 @@ export default function BallotComplete() {
           </p>
         </div>
 
-        {/* Actions */}
+        {/* Actions — C-3: demote results link */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
           <button onClick={handleLogoutNow} style={{
             width: '100%', padding: '13px', borderRadius: '10px', border: 'none',
@@ -132,13 +133,13 @@ export default function BallotComplete() {
           }}>
             Done — Next Student
           </button>
-          <Link to="/results" style={{ fontSize: '13px', color: C.textMuted, textDecoration: 'none', marginTop: '4px' }}>
-            View Election Results Page →
+          <Link to="/results" style={{ fontSize: '12px', color: C.textMuted, textDecoration: 'none', marginTop: '4px', opacity: 0.7 }}>
+            View Election Results →
           </Link>
         </div>
 
         <p style={{ marginTop: '28px', fontSize: '11px', color: C.creamBorder }}>
-          KAWSEC Voting System · Nkawkaw Senior High School · © 2026
+          KAWSEC Voting System · Nkawkaw Senior High School · © {new Date().getFullYear()}
         </p>
       </div>
     </div>

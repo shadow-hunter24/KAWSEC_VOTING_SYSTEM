@@ -65,11 +65,11 @@ function PositionCard({ position, results }: { position: string; results: Publis
                 </span>
               </div>
 
-              {/* Vote bar */}
+              {/* Vote bar — RES-5: aria-valuetext */}
               <div style={{ height: '6px', borderRadius: '999px', backgroundColor: 'rgba(0,0,0,0.08)', overflow: 'hidden' }}>
                 <div style={{ height: '100%', borderRadius: '999px', backgroundColor: meta.colour, width: `${pct}%`, transition: 'width 0.6s ease' }}
                   role="progressbar" aria-valuenow={r.vote_count} aria-valuemin={0} aria-valuemax={totalVotes}
-                  aria-label={`${r.candidate_name}: ${r.vote_count} of ${totalVotes} votes`} />
+                  aria-valuetext={`${r.candidate_name}: ${r.vote_count} of ${totalVotes} votes, ${pct}%`} />
               </div>
               <p style={{ fontSize: '11px', color: meta.colour, marginTop: '4px', textAlign: 'right', opacity: 0.8 }}>{pct}%</p>
             </div>
@@ -140,6 +140,7 @@ export default function ResultsPage() {
           header, .no-print { display: none !important; }
           body { background: white !important; }
         }
+        @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
 
       {/* Header */}
@@ -165,11 +166,11 @@ export default function ResultsPage() {
 
       <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '40px 24px' }}>
 
-        {/* Election selector */}
+        {/* Election selector — RES-2: associate label with select */}
         {elections.length > 1 && (
           <div className="no-print" style={{ marginBottom: '28px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: C.greenPrimary, marginRight: '10px' }}>Election:</label>
-            <select value={activeId} onChange={e => setActiveId(e.target.value)}
+            <label htmlFor="election-select" style={{ fontSize: '13px', fontWeight: 600, color: C.greenPrimary, marginRight: '10px' }}>Election:</label>
+            <select id="election-select" value={activeId} onChange={e => setActiveId(e.target.value)}
               style={{ padding: '9px 14px', borderRadius: '8px', border: `1.5px solid ${C.creamBorder}`, fontSize: '13px', backgroundColor: '#fff' }}>
               {elections.map(e => <option key={e.id} value={e.id}>{e.title}</option>)}
             </select>
@@ -189,7 +190,13 @@ export default function ResultsPage() {
           </div>
         )}
 
-        {loading && !noResults && <p style={{ textAlign: 'center', color: C.textMuted, padding: '48px' }}>Loading results…</p>}
+        {/* RES-1: Replace plain <p> with spinner */}
+        {loading && !noResults && (
+          <div style={{ textAlign: 'center', padding: '48px' }} aria-busy="true" aria-live="polite">
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', border: `3px solid ${C.creamBorder}`, borderTopColor: C.greenPrimary, margin: '0 auto 16px', animation: 'spin 0.8s linear infinite' }} aria-hidden="true" />
+            <p style={{ color: C.textMuted, fontSize: '14px' }}>Loading results…</p>
+          </div>
+        )}
 
         {/* Published results */}
         {!loading && !noResults && results.length > 0 && (
@@ -233,7 +240,7 @@ export default function ResultsPage() {
             ))}
 
             <p style={{ fontSize: '11px', color: C.textMuted, textAlign: 'center', marginTop: '32px' }}>
-              Official results published by KAWSEC IT Coordinator · Nkawkaw Senior High School · © 2026
+              Official results published by KAWSEC IT Coordinator · Nkawkaw Senior High School · © {new Date().getFullYear()}
             </p>
           </div>
         )}

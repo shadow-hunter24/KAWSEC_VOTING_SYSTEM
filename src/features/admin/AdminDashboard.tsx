@@ -4,18 +4,18 @@ import { useAuth } from '../../contexts/AuthContext';
 import { C } from '../../lib/tokens';
 
 const cards = [
-  { Icon: Eye,       title: 'Election Overview',    desc: 'Live stats: total students, credentials, votes cast, turnout %, winners per position.', link: '/admin/overview',         ready: true,  phase: 'Live'    },
-  { Icon: Upload,    title: 'Import Students',      desc: 'Upload student register via CSV. IDs auto-generated per department.',              link: '/admin/students/import',  ready: true,  phase: 'Phase 3' },
-  { Icon: Users,     title: 'Student Register',     desc: 'View, search, edit and manage all students. Change class, house, year group.',     link: '/admin/students',         ready: true,  phase: 'Phase 3' },
-  { Icon: BookOpen,  title: 'Class Management',     desc: 'Add classes for each department and year group before importing students.',         link: '/admin/class-management', ready: true,  phase: 'Phase 3' },
-  { Icon: Home,      title: 'House Management',     desc: 'Add, edit and manage school houses. Houses are used for House Captain elections.',  link: '/admin/houses',           ready: true,  phase: 'Phase 3' },
-  { Icon: UserCheck, title: 'Candidate Management', desc: 'Add candidates, upload photos/manifestos, approve or reject.',                        link: '/admin/candidates',       ready: true,  phase: 'Phase 3' },
-  { Icon: Settings,  title: 'Election Settings',    desc: 'Create elections, set schedules, approve and open/close voting.',                      link: '/admin/elections',        ready: true,  phase: 'Phase 5' },
-  { Icon: ListPlus,  title: 'Position Management',  desc: 'Create ballot positions for each election — titles, gender scope, house eligibility.', link: '/admin/positions',        ready: true,  phase: 'Phase 3' },
-  { Icon: BarChart2, title: 'Turnout Dashboard',    desc: 'Live participation rates per position — no candidate totals shown.',                   link: '/admin/turnout',          ready: true,  phase: 'Phase 5' },
-  { Icon: Monitor,   title: 'Class Monitor',        desc: 'Real-time per-class voting progress. Call classes to the ICT lab in order.',           link: '/admin/classes',          ready: true,  phase: 'Phase 6+' },
-  { Icon: Users,     title: 'Tally & Publish',      desc: 'Review vote counts, resolve ties, publish official results.',                          link: '/admin/tally',            ready: true,  phase: 'Phase 5' },
-  { Icon: FileText,  title: 'Audit Log',            desc: 'Tamper-evident log of all system actions, logins and admin changes.',                  link: '/admin/audit',            ready: true,  phase: 'Phase 5' },
+  { Icon: Eye,       title: 'Election Overview',    desc: 'Live stats: total students, credentials, votes cast, turnout %, winners per position.', link: '/admin/overview',         ready: true,  badge: 'Live'         },
+  { Icon: Upload,    title: 'Import Students',      desc: 'Upload student register via CSV. IDs auto-generated per department.',              link: '/admin/students/import',  ready: true,  badge: 'Setup'        },
+  { Icon: Users,     title: 'Student Register',     desc: 'View, search, edit and manage all students. Change class, house, year group.',     link: '/admin/students',         ready: true,  badge: 'Setup'        },
+  { Icon: BookOpen,  title: 'Class Management',     desc: 'Add classes for each department and year group before importing students.',         link: '/admin/class-management', ready: true,  badge: 'Setup'        },
+  { Icon: Home,      title: 'House Management',     desc: 'Add, edit and manage school houses. Houses are used for House Captain elections.',  link: '/admin/houses',           ready: true,  badge: 'Setup'        },
+  { Icon: UserCheck, title: 'Candidate Management', desc: 'Add candidates, upload photos/manifestos, approve or reject.',                        link: '/admin/candidates',       ready: true,  badge: 'Election'     },
+  { Icon: Settings,  title: 'Election Settings',    desc: 'Create elections, set schedules, approve and open/close voting.',                      link: '/admin/elections',        ready: true,  badge: 'Election'     },
+  { Icon: ListPlus,  title: 'Position Management',  desc: 'Create ballot positions for each election — titles, gender scope, house eligibility.', link: '/admin/positions',        ready: true,  badge: 'Election'     },
+  { Icon: BarChart2, title: 'Turnout Dashboard',    desc: 'Live participation rates per position — no candidate totals shown.',                   link: '/admin/turnout',          ready: true,  badge: 'Monitoring'   },
+  { Icon: Monitor,   title: 'Class Monitor',        desc: 'Real-time per-class voting progress. Call classes to the ICT lab in order.',           link: '/admin/classes',          ready: true,  badge: 'Monitoring'   },
+  { Icon: BarChart2, title: 'Tally & Publish',      desc: 'Review vote counts, resolve ties, publish official results.',                          link: '/admin/tally',            ready: true,  badge: 'Results'      },
+  { Icon: FileText,  title: 'Audit Log',            desc: 'Tamper-evident log of all system actions, logins and admin changes.',                  link: '/admin/audit',            ready: true,  badge: 'Compliance'   },
 ];
 
 export default function AdminDashboard() {
@@ -56,11 +56,11 @@ export default function AdminDashboard() {
 
       <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '40px 24px' }}>
         <p style={{ fontSize: '14px', color: C.textMuted, marginBottom: '32px' }}>
-          All Phase 3 and Phase 5 modules are now active. Select a module to manage the election.
+          Select a module to manage the election.
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-          {cards.map(({ Icon, title, desc, link, phase }) => (
+          {cards.map(({ Icon, title, desc, link, badge }) => (
             <Link key={title} to={link} style={{ textDecoration: 'none', color: 'inherit' }}>
               <div style={{
                 backgroundColor: C.creamBg, borderRadius: '16px', padding: '24px',
@@ -75,20 +75,15 @@ export default function AdminDashboard() {
                 </div>
                 <h2 style={{ fontWeight: 700, fontSize: '15px', color: '#1a1a1a', marginBottom: '6px' }}>{title}</h2>
                 <p style={{ fontSize: '13px', color: C.textMuted, lineHeight: 1.6, marginBottom: '16px' }}>{desc}</p>
-                <span style={{ display: 'inline-block', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '999px', backgroundColor: C.greenLight, color: C.greenPrimary, border: `1px solid ${C.creamBorder}` }}>
-                  ✓ Active · {phase}
+                {/* AD-3: aria-hidden on badge — informational only */}
+                <span aria-hidden="true" style={{ display: 'inline-block', fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '999px', backgroundColor: C.greenLight, color: C.greenPrimary, border: `1px solid ${C.creamBorder}` }}>
+                  ✓ Active · {badge}
                 </span>
               </div>
             </Link>
           ))}
         </div>
 
-        <div style={{ marginTop: '40px', textAlign: 'center' }}>
-          <button onClick={handleSignOut} style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '10px 22px', borderRadius: '10px', border: `1.5px solid ${C.creamBorder}`, color: C.textMuted, fontSize: '13px', fontWeight: 600, background: 'none', cursor: 'pointer' }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.greenPrimary; (e.currentTarget as HTMLButtonElement).style.color = C.greenPrimary; }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.borderColor = C.creamBorder; (e.currentTarget as HTMLButtonElement).style.color = C.textMuted; }}
-          ><LogOut size={14} /> Sign Out</button>
-        </div>
       </main>
     </div>
   );

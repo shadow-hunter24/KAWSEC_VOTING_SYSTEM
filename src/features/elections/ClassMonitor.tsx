@@ -112,6 +112,10 @@ export default function ClassMonitor() {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* CLS-4: pulsing Live indicator */}
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '11px', color: '#4ade80', fontWeight: 700 }} aria-label="Live data — auto-refreshes every 20 seconds">
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#4ade80', animation: 'pulse-live 1.6s ease-in-out infinite' }} aria-hidden="true" /> Live
+            </span>
             {lastRefresh && <span style={{ fontSize: '11px', color: 'rgba(245,240,232,0.5)' }}>Updated {lastRefresh.toLocaleTimeString()}</span>}
             <button onClick={() => loadRows(activeId)} style={{ background: 'none', border: 'none', color: 'rgba(245,240,232,0.7)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
               <RefreshCw size={14} /> Refresh
@@ -123,11 +127,11 @@ export default function ClassMonitor() {
 
       <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '32px 24px' }}>
 
-        {/* Election selector */}
+        {/* Election selector — CLS-2: associated label */}
         {elections.length > 1 && (
           <div style={{ marginBottom: '24px' }}>
-            <label style={{ fontSize: '13px', fontWeight: 600, color: C.greenPrimary, marginRight: '10px' }}>Election:</label>
-            <select value={activeId} onChange={e => setActiveId(e.target.value)}
+            <label htmlFor="class-monitor-election-select" style={{ fontSize: '13px', fontWeight: 600, color: C.greenPrimary, marginRight: '10px' }}>Election:</label>
+            <select id="class-monitor-election-select" value={activeId} onChange={e => setActiveId(e.target.value)}
               style={{ padding: '9px 14px', borderRadius: '8px', border: `1.5px solid ${C.creamBorder}`, fontSize: '13px', backgroundColor: '#fff' }}>
               {elections.map(e => <option key={e.id} value={e.id}>{e.title} ({e.status})</option>)}
             </select>
@@ -223,7 +227,9 @@ export default function ClassMonitor() {
                           </span>
                         </div>
                         <div style={{ height: '6px', borderRadius: '999px', backgroundColor: C.creamCard, overflow: 'hidden', marginBottom: '6px' }}>
-                          <div style={{ height: '100%', borderRadius: '999px', backgroundColor: colors.bar, width: `${pct}%`, transition: 'width 0.5s ease' }} />
+                          <div style={{ height: '100%', borderRadius: '999px', backgroundColor: colors.bar, width: `${pct}%`, transition: 'width 0.5s ease' }}
+                            role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}
+                            aria-label={`${row.class_name}: ${pct}% turnout`} />
                         </div>
                         <p style={{ fontSize: '11px', color: C.textMuted }}>
                           {row.total_voted} of {row.total_eligible} voted
@@ -243,6 +249,8 @@ export default function ClassMonitor() {
           Auto-refreshes every 20 seconds · Candidate totals are never shown here
         </p>
       </main>
+
+      <style>{`@keyframes pulse-live { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }`}</style>
     </div>
   );
 }

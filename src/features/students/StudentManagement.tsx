@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search, Edit2, X, Check, AlertTriangle,
@@ -56,6 +56,26 @@ function EditModal({
   });
   const [saving, setSaving] = useState(false);
   const [error,  setError]  = useState('');
+
+  // SM-1: focus trap — focus first element on open and keep Tab within the modal
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const node = dialogRef.current;
+    if (!node) return;
+    const focusable = node.querySelectorAll<HTMLElement>('input, select, textarea, button:not([disabled])');
+    focusable[0]?.focus();
+  }, []);
+  function handleTrap(e: React.KeyboardEvent) {
+    if (e.key !== 'Tab') return;
+    const node = dialogRef.current;
+    if (!node) return;
+    const focusable = Array.from(node.querySelectorAll<HTMLElement>('input, select, textarea, button:not([disabled])'));
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
 
   // Group classes by year group for the select
   const classOptions = classes
@@ -268,6 +288,14 @@ export default function StudentManagement() {
   const [editing,  setEditing]  = useState<Student | null>(null);
   const [saveMsg,  setSaveMsg]  = useState('');
   const [saveErr,  setSaveErr]  = useState('');
+  const [confirmId, setConfirmId] = useState<string | null>(null); // SM-2
+
+  // SM-2: auto-clear the deactivation confirmation after a short delay
+  useEffect(() => {
+    if (!confirmId) return;
+    const t = setTimeout(() => setConfirmId(null), 4000);
+    return () => clearTimeout(t);
+  }, [confirmId]);
 
   // Load reference data once
   useEffect(() => {
@@ -410,13 +438,14 @@ export default function StudentManagement() {
         {/* Filters */}
         <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap', alignItems: 'center' }}>
 
-          {/* Search */}
+          {/* Search — SM-6: accessible label */}
           <div style={{ position: 'relative', flex: '1 1 220px' }}>
             <Search size={14} color={C.textMuted} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search by name or student ID…"
+              aria-label="Search students by name or student ID"
               style={{ ...inputStyle, width: '100%', paddingLeft: '32px' }}
               onFocus={e => { e.currentTarget.style.borderColor = C.greenPrimary; }}
               onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; }}
@@ -424,13 +453,13 @@ export default function StudentManagement() {
           </div>
 
           {/* Department filter */}
-          <select value={filterDept} onChange={e => { setFilterDept(e.target.value); setFilterClass(''); }} style={{ ...inputStyle, minWidth: '160px', cursor: 'pointer' }}>
+          <select aria-label="Filter by department" value={filterDept} onChange={e => { setFilterDept(e.target.value); setFilterClass(''); }} style={{ ...inputStyle, minWidth: '160px', cursor: 'pointer' }}>
             <option value="">All Departments</option>
             {departments.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
           </select>
 
           {/* Class filter */}
-          <select value={filterClass} onChange={e => setFilterClass(e.target.value)} style={{ ...inputStyle, minWidth: '150px', cursor: 'pointer' }}>
+          <select aria-label="Filter by class" value={filterClass} onChange={e => setFilterClass(e.target.value)} style={{ ...inputStyle, minWidth: '150px', cursor: 'pointer' }}>
             <option value="">All Classes</option>
             {(filterDept
               ? classes.filter(c => c.department_id === filterDept)
@@ -441,7 +470,7 @@ export default function StudentManagement() {
           </select>
 
           {/* Year group filter */}
-          <select value={filterYear} onChange={e => setFilterYear(e.target.value)} style={{ ...inputStyle, minWidth: '120px', cursor: 'pointer' }}>
+          <select aria-label="Filter by year group" value={filterYear} onChange={e => setFilterYear(e.target.value)} style={{ ...inputStyle, minWidth: '120px', cursor: 'pointer' }}>
             <option value="">All Forms</option>
             <option value="1">Form 1</option>
             <option value="2">Form 2</option>
@@ -449,7 +478,7 @@ export default function StudentManagement() {
           </select>
 
           {/* Active filter */}
-          <select value={filterActive} onChange={e => setFilterActive(e.target.value)} style={{ ...inputStyle, minWidth: '130px', cursor: 'pointer' }}>
+          <select aria-label="Filter by active status" value={filterActive} onChange={e => setFilterActive(e.target.value)} style={{ ...inputStyle, minWidth: '130px', cursor: 'pointer' }}>
             <option value="all">All Students</option>
             <option value="active">Active Only</option>
             <option value="inactive">Inactive Only</option>
@@ -483,7 +512,7 @@ export default function StudentManagement() {
           </div>
         ) : (
           <div style={{ overflowX: 'auto', borderRadius: '14px', border: `1px solid ${C.creamBorder}` }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <table aria-label="Student register" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ backgroundColor: C.creamCard }}>
                   {['Student ID', 'Full Name', 'Gender', 'Class', 'House', 'Form', 'Status', 'Actions'].map(h => (
@@ -541,19 +570,25 @@ export default function StudentManagement() {
                           <Edit2 size={12} /> Edit
                         </button>
 
-                        {/* Toggle active */}
+                        {/* Toggle active — SM-2: two-step inline confirm for deactivation */}
                         <button
-                          onClick={() => toggleActive(s)}
-                          aria-label={s.is_active ? `Deactivate ${s.full_name}` : `Activate ${s.full_name}`}
+                          onClick={() => {
+                            if (s.is_active && confirmId !== s.id) { setConfirmId(s.id); return; }
+                            setConfirmId(null);
+                            toggleActive(s);
+                          }}
+                          aria-label={s.is_active ? (confirmId === s.id ? `Confirm deactivation of ${s.full_name}` : `Deactivate ${s.full_name}`) : `Activate ${s.full_name}`}
                           style={{
                             display: 'flex', alignItems: 'center', gap: '4px',
                             padding: '6px 10px', borderRadius: '7px', border: 'none',
-                            backgroundColor: s.is_active ? '#fef2f2' : C.greenLight,
-                            color: s.is_active ? '#dc2626' : C.greenPrimary,
+                            backgroundColor: s.is_active ? (confirmId === s.id ? '#dc2626' : '#fef2f2') : C.greenLight,
+                            color: s.is_active ? (confirmId === s.id ? '#fff' : '#dc2626') : C.greenPrimary,
                             fontSize: '12px', fontWeight: 600, cursor: 'pointer',
                           }}
                         >
-                          {s.is_active ? <><UserX size={12} /> Deactivate</> : <><UserCheck size={12} /> Activate</>}
+                          {s.is_active
+                            ? (confirmId === s.id ? <><UserX size={12} /> Confirm?</> : <><UserX size={12} /> Deactivate</>)
+                            : <><UserCheck size={12} /> Activate</>}
                         </button>
                       </div>
                     </td>

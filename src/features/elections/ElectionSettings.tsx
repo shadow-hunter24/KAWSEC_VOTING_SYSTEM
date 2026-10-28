@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Calendar, ChevronRight, AlertTriangle, CheckCircle, Settings, Trash2, Ban, RotateCcw } from 'lucide-react';
+import { Plus, Calendar, ChevronRight, AlertTriangle, CheckCircle, Settings, Trash2, Ban, RotateCcw, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Election } from '../../types';
 import { C } from '../../lib/tokens';
@@ -31,6 +31,7 @@ export default function ElectionSettings() {
   const [showCreate,  setShowCreate]  = useState(false);
   const [creating,    setCreating]    = useState(false);
   const [unpublishing, setUnpublishing] = useState(false);
+  const [confirmClose, setConfirmClose] = useState<Election | null>(null); // ES-1
 
   // New election form
   const [title,      setTitle]      = useState('');
@@ -50,6 +51,11 @@ export default function ElectionSettings() {
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
+    // ES-3: client-side validation — close must be after open
+    if (opensAt && closesAt && closesAt <= opensAt) {
+      setActionErr('Voting close time must be after the open time. Please check the dates.');
+      return;
+    }
     setCreating(true); setActionErr('');
     const { error } = await supabase.from('elections').insert({
       title: title.trim(),
@@ -117,16 +123,19 @@ export default function ElectionSettings() {
 
       <main style={{ maxWidth: '1000px', margin: '0 auto', padding: '36px 24px' }}>
 
+        {/* ES-8: dismissible feedback banners */}
         {actionMsg && (
-          <div style={{ display: 'flex', gap: '10px', padding: '14px 16px', borderRadius: '12px', backgroundColor: C.greenLight, border: `1px solid ${C.greenMid}40`, marginBottom: '20px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '14px 16px', borderRadius: '12px', backgroundColor: C.greenLight, border: `1px solid ${C.greenMid}40`, marginBottom: '20px' }}>
             <CheckCircle size={16} color={C.greenPrimary} style={{ flexShrink: 0, marginTop: '1px' }} />
-            <p style={{ fontSize: '13px', color: C.greenPrimary, fontWeight: 600 }}>{actionMsg}</p>
+            <p style={{ fontSize: '13px', color: C.greenPrimary, fontWeight: 600, flex: 1 }}>{actionMsg}</p>
+            <button onClick={() => setActionMsg('')} aria-label="Dismiss message" style={{ background: 'none', border: 'none', cursor: 'pointer', color: C.greenPrimary, padding: '0 2px', flexShrink: 0, opacity: 0.6, fontSize: '16px', lineHeight: 1 }}>×</button>
           </div>
         )}
         {actionErr && (
-          <div style={{ display: 'flex', gap: '10px', padding: '14px 16px', borderRadius: '12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', marginBottom: '20px' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '14px 16px', borderRadius: '12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', marginBottom: '20px' }}>
             <AlertTriangle size={16} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />
-            <p style={{ fontSize: '13px', color: '#dc2626' }}>{actionErr}</p>
+            <p style={{ fontSize: '13px', color: '#dc2626', flex: 1 }}>{actionErr}</p>
+            <button onClick={() => setActionErr('')} aria-label="Dismiss error" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', padding: '0 2px', flexShrink: 0, opacity: 0.6, fontSize: '16px', lineHeight: 1 }}>×</button>
           </div>
         )}
 
@@ -224,7 +233,9 @@ export default function ElectionSettings() {
                     <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
                       {next && next.target && (
                         <button
-                          onClick={() => handleTransition(el.id, next.target)}
+                          // ES-1: Close Voting opens a confirmation modal; ES-7: descriptive aria-label
+                          onClick={() => next.danger ? setConfirmClose(el) : handleTransition(el.id, next.target)}
+                          aria-label={`${next.label} for ${el.title}`}
                           style={{
                             display: 'flex', alignItems: 'center', gap: '6px',
                             padding: '9px 16px', borderRadius: '8px', border: 'none',
@@ -234,7 +245,7 @@ export default function ElectionSettings() {
                         >{next.label} <ChevronRight size={13} /></button>
                       )}
                       {el.status === 'verified' && (
-                        <Link to={`/admin/tally/${el.id}`} style={{
+                        <Link to={`/admin/tally/${el.id}`} aria-label={`Go to Tally & Publish for ${el.title}`} style={{
                           display: 'flex', alignItems: 'center', gap: '6px',
                           padding: '9px 16px', borderRadius: '8px',
                           backgroundColor: C.greenPrimary, color: '#fff',
@@ -258,6 +269,7 @@ export default function ElectionSettings() {
                             if (error) { setActionErr(error.message); }
                             else { setActionMsg('Election deleted.'); await loadElections(); }
                           }}
+                          aria-label={`Delete election ${el.title}`}
                           style={{display: 'flex', alignItems: 'center', gap: '6px',
                             padding: '9px 16px', borderRadius: '8px', border: 'none',
                             backgroundColor: '#dc2626', color: '#fff',
@@ -270,6 +282,7 @@ export default function ElectionSettings() {
                             if (!window.confirm('Cancel this election? All entitlements and votes will be preserved in the audit log but the election will be permanently cancelled.')) return;
                             handleTransition(el.id, 'cancelled');
                           }}
+                          aria-label={`Cancel election ${el.title}`}
                           style={{display: 'flex', alignItems: 'center', gap: '6px',
                             padding: '9px 16px', borderRadius: '8px', border: 'none',
                             backgroundColor: '#d97706', color: '#fff',
@@ -289,6 +302,7 @@ export default function ElectionSettings() {
                             await loadElections();
                             setUnpublishing(false);
                           }}
+                          aria-label={`Unpublish results for ${el.title}`}
                           style={{display: 'flex', alignItems: 'center', gap: '6px',
                             padding: '9px 16px', borderRadius: '8px', border: 'none',
                             backgroundColor: '#d97706', color: '#fff',
@@ -304,6 +318,41 @@ export default function ElectionSettings() {
           </div>
         )}
       </main>
+
+      {/* ES-1: Close Voting confirmation modal */}
+      {confirmClose && (
+        <div role="dialog" aria-modal="true" aria-labelledby="close-voting-title"
+          onClick={e => { if (e.target === e.currentTarget) setConfirmClose(null); }}
+          style={{ position: 'fixed', inset: 0, zIndex: 100, backgroundColor: 'rgba(15,45,26,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ backgroundColor: C.creamBg, borderRadius: '20px', width: '100%', maxWidth: '440px', boxShadow: '0 24px 64px rgba(15,45,26,0.35)', overflow: 'hidden' }}>
+            <div style={{ padding: '18px 24px', backgroundColor: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 id="close-voting-title" style={{ color: '#fff', fontWeight: 800, fontSize: '16px' }}>Close Voting?</h2>
+              <button onClick={() => setConfirmClose(null)} aria-label="Close"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.8)', padding: '4px' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ padding: '24px' }}>
+              <p style={{ fontSize: '13px', color: C.textMuted, lineHeight: 1.6, marginBottom: '14px' }}>
+                You are about to close voting for <strong style={{ color: C.greenPrimary }}>{confirmClose.title}</strong>.
+              </p>
+              <div style={{ padding: '12px 14px', borderRadius: '10px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', marginBottom: '18px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                <AlertTriangle size={16} color="#dc2626" style={{ flexShrink: 0, marginTop: '1px' }} />
+                <p style={{ fontSize: '12px', color: '#dc2626', lineHeight: 1.5 }}>
+                  Closing voting ends the election for all students. Any student who has not yet voted will be unable to do so. This action is recorded in the audit log.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={() => setConfirmClose(null)} style={{ flex: 1, padding: '11px', borderRadius: '10px', border: `1.5px solid ${C.creamBorder}`, background: 'none', color: C.textMuted, fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={() => { const el = confirmClose; setConfirmClose(null); handleTransition(el.id, 'closed'); }}
+                  style={{ flex: 2, padding: '11px', borderRadius: '10px', border: 'none', backgroundColor: '#dc2626', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <Ban size={15} /> Close Voting Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

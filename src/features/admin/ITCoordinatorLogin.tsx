@@ -86,10 +86,10 @@ export default function ITCoordinatorLogin() {
                 </label>
                 <input id="email-input" type="email" value={email} onChange={e => setEmail(e.target.value)}
                   placeholder="coordinator@kawsec.edu.gh" style={inputStyle}
-                  onFocus={e => { e.currentTarget.style.borderColor = C.greenPrimary; }}
-                  onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; }}
+                  onFocus={e => { e.currentTarget.style.borderColor = C.greenPrimary; e.currentTarget.style.boxShadow = C.focusRing; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; e.currentTarget.style.boxShadow = 'none'; }}
                   autoFocus autoComplete="username" disabled={busy}
-                  aria-required="true" />
+                  aria-required="true" aria-invalid={error ? 'true' : undefined} />
               </div>
 
               <div style={{ marginBottom: '24px' }}>
@@ -98,10 +98,10 @@ export default function ITCoordinatorLogin() {
                 </label>
                 <input id="password-input" type="password" value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••" style={inputStyle}
-                  onFocus={e => { e.currentTarget.style.borderColor = C.greenPrimary; }}
-                  onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; }}
+                  onFocus={e => { e.currentTarget.style.borderColor = C.greenPrimary; e.currentTarget.style.boxShadow = C.focusRing; }}
+                  onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; e.currentTarget.style.boxShadow = 'none'; }}
                   autoComplete="current-password" disabled={busy}
-                  aria-required="true" />
+                  aria-required="true" aria-invalid={error ? 'true' : undefined} />
               </div>
 
               <button type="submit" disabled={busy} aria-busy={busy} style={{

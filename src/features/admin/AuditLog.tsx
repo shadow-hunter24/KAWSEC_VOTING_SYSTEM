@@ -6,15 +6,33 @@ import type { AuditEvent } from '../../types';
 import { C } from '../../lib/tokens';
 
 const ACTION_COLORS: Record<string, string> = {
-  'election.approved':  '#1e40af',
-  'election.open':      '#065f46',
-  'election.closed':    '#92400e',
-  'election.verified':  '#5b21b6',
-  'results.published':  '#065f46',
-  'ballot.cast':        C.greenPrimary,
+  'election.approved':     '#1e40af',
+  'election.open':         '#065f46',
+  'election.closed':       '#92400e',
+  'election.verified':     '#5b21b6',
+  'election.deleted':      '#991b1b',
+  'election.cancelled':    '#b45309',
+  'results.published':     '#065f46',
+  'results.unpublished':   '#d97706',
+  'ballot.cast':           C.greenPrimary,
   'student.authenticated': '#374151',
-  'candidate.approved': '#065f46',
+  'candidate.approved':    '#065f46',
+  'candidate.rejected':    '#991b1b',
+  'student.imported':      '#1e40af',
 };
+
+// AU-1: Structured renderer for known event types
+function renderDetails(action: string, details: Record<string, unknown> | null): string {
+  if (!details) return '—';
+  if (action === 'ballot.cast') return `Election: ${details.election_id ?? '—'} · Votes: ${details.vote_count ?? '—'}`;
+  if (action.startsWith('election.')) return `Election: ${details.title ?? details.election_id ?? '—'}`;
+  if (action.startsWith('candidate.')) return `${details.candidate_name ?? details.candidate_id ?? '—'}`;
+  if (action === 'student.imported') return `${details.count ?? '—'} students`;
+  if (action === 'results.unpublished') return `Previous status: ${details.previous_status ?? '—'}`;
+  // Generic fallback — only show key names, not raw values that may include IDs
+  const keys = Object.keys(details).slice(0, 3);
+  return keys.map(k => `${k}: ${String(details[k]).slice(0, 40)}`).join(' · ');
+}
 
 export default function AuditLog() {
   const [events,  setEvents]  = useState<AuditEvent[]>([]);
@@ -22,6 +40,12 @@ export default function AuditLog() {
   const [search,  setSearch]  = useState('');
   const [page,    setPage]    = useState(0);
   const PAGE_SIZE = 50;
+
+  useEffect(() => {
+    // AU-2: Reset to page 0 when search changes
+    setPage(0);
+    setEvents([]);
+  }, [search]);
 
   useEffect(() => {
     supabase
@@ -57,10 +81,13 @@ export default function AuditLog() {
       </header>
 
       <main style={{ maxWidth: '1100px', margin: '0 auto', padding: '36px 24px' }}>
-        {/* Search */}
+        {/* AU-5: labelled search input */}
         <div style={{ position: 'relative', maxWidth: '400px', marginBottom: '24px' }}>
+          <label htmlFor="audit-search" style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}>
+            Filter audit log by action or actor
+          </label>
           <Search size={15} color={C.textMuted} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
-          <input value={search} onChange={e => setSearch(e.target.value)}
+          <input id="audit-search" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Filter by action or actor…"
             style={{ width: '100%', padding: '10px 12px 10px 36px', borderRadius: '10px', border: `1.5px solid ${C.creamBorder}`, fontSize: '13px', backgroundColor: '#fff', outline: 'none', fontFamily: 'inherit' }}
             onFocus={e => { e.currentTarget.style.borderColor = C.greenPrimary; }}
@@ -71,7 +98,7 @@ export default function AuditLog() {
           <p style={{ textAlign: 'center', color: C.textMuted, padding: '48px' }}>Loading audit log…</p>
         ) : (
           <div style={{ overflowX: 'auto', borderRadius: '14px', border: `1px solid ${C.creamBorder}` }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <table aria-label="Audit event log" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
               <thead>
                 <tr style={{ backgroundColor: C.creamCard }}>
                   {['Time', 'Action', 'Actor', 'Details'].map(h => (
@@ -100,7 +127,8 @@ export default function AuditLog() {
                       </td>
                       <td style={{ padding: '10px 16px', fontFamily: 'monospace', fontSize: '12px', color: '#1a1a1a' }}>{ev.actor}</td>
                       <td style={{ padding: '10px 16px', fontSize: '12px', color: C.textMuted, maxWidth: '300px' }}>
-                        {ev.details ? JSON.stringify(ev.details) : '—'}
+                        {/* AU-1: structured renderer */}
+                        {renderDetails(ev.action, ev.details)}
                       </td>
                     </tr>
                   ))

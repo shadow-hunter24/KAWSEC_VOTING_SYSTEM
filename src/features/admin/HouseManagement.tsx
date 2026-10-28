@@ -28,6 +28,22 @@ const PRESET_COLOURS = [
   '#0891b2', '#059669', '#d97706', '#9d174d',
 ];
 
+// HM-3: descriptive names for colour swatches (accessible labels)
+const COLOUR_NAMES: Record<string, string> = {
+  '#1a4d2e': 'Dark Green',
+  '#2d7a4f': 'Medium Green',
+  '#0f2d1a': 'Forest Green',
+  '#3d8f5f': 'Light Green',
+  '#1e40af': 'Dark Blue',
+  '#7c3aed': 'Purple',
+  '#b45309': 'Amber Brown',
+  '#dc2626': 'Red',
+  '#0891b2': 'Cyan',
+  '#059669': 'Emerald',
+  '#d97706': 'Orange',
+  '#9d174d': 'Maroon',
+};
+
 // ── House member panel ────────────────────────────────────────
 function HouseMemberPanel({ house }: { house: House }) {
   const [members, setMembers] = useState<MemberRow[]>([]);
@@ -182,10 +198,10 @@ function HouseRow({
               onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; }} />
           </div>
 
-          {/* Colour */}
+          {/* Colour — HM-4: label associated via htmlFor/id */}
           <div>
-            <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: C.textMuted, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Colour</label>
-            <input type="color" value={colour} onChange={e => setColour(e.target.value)}
+            <label htmlFor={`house-colour-${house.id}`} style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: C.textMuted, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Colour</label>
+            <input id={`house-colour-${house.id}`} type="color" value={colour} onChange={e => setColour(e.target.value)}
               style={{ width: '48px', height: '38px', borderRadius: '8px', border: `1.5px solid ${C.creamBorder}`, cursor: 'pointer', padding: '2px' }} />
           </div>
         </div>
@@ -194,7 +210,7 @@ function HouseRow({
         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
           {PRESET_COLOURS.map(c => (
             <button key={c} type="button" onClick={() => setColour(c)}
-              aria-label={`Select colour ${c}`}
+              aria-label={`Select colour ${COLOUR_NAMES[c] ?? c}`}
               style={{
                 width: '24px', height: '24px', borderRadius: '6px', border: colour === c ? '2px solid #1a1a1a' : '2px solid transparent',
                 backgroundColor: c, cursor: 'pointer', flexShrink: 0,
@@ -507,10 +523,10 @@ export default function HouseManagement() {
                   required />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: C.textMuted, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <label htmlFor="add-house-colour" style={{ display: 'block', fontSize: '11px', fontWeight: 700, color: C.textMuted, marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   Colour
                 </label>
-                <input type="color" value={addColour} onChange={e => setAddColour(e.target.value)}
+                <input id="add-house-colour" type="color" value={addColour} onChange={e => setAddColour(e.target.value)}
                   style={{ width: '48px', height: '38px', borderRadius: '8px', border: `1.5px solid ${C.creamBorder}`, cursor: 'pointer', padding: '2px' }} />
               </div>
             </div>
@@ -519,7 +535,7 @@ export default function HouseManagement() {
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '10px' }}>
               {PRESET_COLOURS.map(c => (
                 <button key={c} type="button" onClick={() => setAddColour(c)}
-                  aria-label={`Select colour ${c}`}
+                  aria-label={`Select colour ${COLOUR_NAMES[c] ?? c}`}
                   style={{
                     width: '24px', height: '24px', borderRadius: '6px',
                     border: addColour === c ? '2px solid #1a1a1a' : '2px solid transparent',

@@ -199,14 +199,18 @@ export default function LandingPage() {
               <Logo size={80} />
             </div>
 
-            {/* Live status badge */}
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: '8px',
-              padding: '6px 16px', borderRadius: '999px', marginBottom: '28px',
-              backgroundColor: 'rgba(245,240,232,0.12)',
-              border: '1px solid rgba(245,240,232,0.3)',
-              color: C.creamCard, fontSize: '12px', fontWeight: 600, letterSpacing: '0.5px',
-            }}>
+            {/* Live status badge — L-2: role="status" + aria-live */}
+            <div
+              role="status"
+              aria-live="polite"
+              aria-label={`Election status: ${statusBadge.text}`}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '8px',
+                padding: '6px 16px', borderRadius: '999px', marginBottom: '28px',
+                backgroundColor: 'rgba(245,240,232,0.12)',
+                border: '1px solid rgba(245,240,232,0.3)',
+                color: C.creamCard, fontSize: '12px', fontWeight: 600, letterSpacing: '0.5px',
+              }}>
               <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: statusBadge.dot, flexShrink: 0 }} aria-hidden="true" />
               {statusBadge.text}
             </div>
@@ -227,17 +231,40 @@ export default function LandingPage() {
               Replace paper ballot boxes with a fast, fair, and verified process.
             </p>
 
+            {/* L-1: Context-sensitive CTA based on election status */}
             <div style={{ display: 'flex', gap: '14px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <Link to="/vote" style={{
-                display: 'inline-flex', alignItems: 'center', gap: '8px',
-                padding: '14px 30px', borderRadius: '10px',
-                backgroundColor: C.creamCard, color: C.greenPrimary,
-                fontSize: '15px', fontWeight: 700, textDecoration: 'none',
-                boxShadow: '0 4px 20px rgba(15,45,26,0.4)', transition: 'transform 0.15s',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.backgroundColor = '#fff'; }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.backgroundColor = C.creamCard; }}
-              >Cast Your Vote <ChevronRight size={17} /></Link>
+              {(!election || election.status === 'open' || election.status === 'approved') && (
+                <Link to="/vote" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  padding: '14px 30px', borderRadius: '10px',
+                  backgroundColor: C.creamCard, color: C.greenPrimary,
+                  fontSize: '15px', fontWeight: 700, textDecoration: 'none',
+                  boxShadow: '0 4px 20px rgba(15,45,26,0.4)', transition: 'transform 0.15s',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.backgroundColor = '#fff'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.backgroundColor = C.creamCard; }}
+                >
+                  {election?.status === 'approved' ? 'Voting Opening Soon' : 'Cast Your Vote'}
+                  <ChevronRight size={17} />
+                </Link>
+              )}
+              {election?.status === 'published' && (
+                <Link to="/results" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '8px',
+                  padding: '14px 30px', borderRadius: '10px',
+                  backgroundColor: C.creamCard, color: C.greenPrimary,
+                  fontSize: '15px', fontWeight: 700, textDecoration: 'none',
+                  boxShadow: '0 4px 20px rgba(15,45,26,0.4)', transition: 'transform 0.15s',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.backgroundColor = '#fff'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.backgroundColor = C.creamCard; }}
+                >Results Published — View Results <ChevronRight size={17} /></Link>
+              )}
+              {!election && !loadingElec && (
+                <span style={{ padding: '14px 30px', borderRadius: '10px', backgroundColor: 'rgba(245,240,232,0.15)', color: C.creamCard, fontSize: '15px', fontWeight: 600, border: '2px solid rgba(245,240,232,0.35)' }}>
+                  Voting has not started yet
+                </span>
+              )}
 
               <Link to="/results" style={{
                 display: 'inline-flex', alignItems: 'center', gap: '8px',
@@ -318,9 +345,11 @@ export default function LandingPage() {
                 : 'Positions will be announced when the election is created.'}
             </p>
 
+            {/* L-3: Unified loading state for Positions section */}
             {loadingElec ? (
-              <div style={{ textAlign: 'center', padding: '32px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: `3px solid ${C.creamBorder}`, borderTopColor: C.greenPrimary, margin: '0 auto', animation: 'spin 0.8s linear infinite' }} />
+              <div style={{ textAlign: 'center', padding: '48px', backgroundColor: C.creamCard, borderRadius: '16px', border: `1px solid ${C.creamBorder}` }} aria-busy="true" aria-live="polite">
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', border: `3px solid ${C.creamBorder}`, borderTopColor: C.greenPrimary, margin: '0 auto 12px', animation: 'spin 0.8s linear infinite' }} aria-hidden="true" />
+                <p style={{ color: C.textMuted, fontSize: '14px' }}>Loading positions…</p>
               </div>
             ) : positions.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px', backgroundColor: C.creamCard, borderRadius: '16px', border: `1px solid ${C.creamBorder}` }}>
@@ -370,9 +399,22 @@ export default function LandingPage() {
             )}
 
             {positions.length > 0 && (
-              <p style={{ textAlign: 'center', marginTop: '28px', fontSize: '13px', color: C.textMuted }}>
+              <p style={{ textAlign: 'center', marginTop: '16px', fontSize: '13px', color: C.textMuted }}>
                 Total: <strong style={{ color: C.greenPrimary }}>{positions.length} ballot position{positions.length !== 1 ? 's' : ''}</strong> across {roleGroups.length} role{roleGroups.length !== 1 ? 's' : ''}.
               </p>
+            )}
+            {positions.length > 0 && (
+              <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '16px', marginBottom: '4px' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: C.textMuted }}>
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#3b82f6', display: 'inline-block' }} aria-hidden="true" /> ♂ Male only
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: C.textMuted }}>
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#ec4899', display: 'inline-block' }} aria-hidden="true" /> ♀ Female only
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', color: C.textMuted }}>
+                  <span style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: C.greenMid, display: 'inline-block' }} aria-hidden="true" /> All genders
+                </span>
+              </div>
             )}
           </div>
         </section>
@@ -410,12 +452,14 @@ export default function LandingPage() {
           <div style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '2.5px', marginTop: '10px' }}>KAWSEC</div>
           <div style={{ fontSize: '12px', color: 'rgba(245,240,232,0.55)' }}>Nkawkaw Senior High School</div>
           <div style={{ fontSize: '12px', color: C.creamCard, opacity: 0.7 }}>Powered by KAWSEC IT Department</div>
-          <div style={{ fontSize: '11px', color: 'rgba(245,240,232,0.3)', marginTop: '8px' }}>© 2026 KAWSEC Voting System. All rights reserved.</div>
+          <div style={{ fontSize: '11px', color: 'rgba(245,240,232,0.3)', marginTop: '8px' }}>© {new Date().getFullYear()} KAWSEC Voting System. All rights reserved.</div>
         </div>
       </footer>
 
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (prefers-reduced-motion: no-preference) {
+          @keyframes spin { to { transform: rotate(360deg); } }
+        }
         @media (max-width: 767px) {
           .nav-desktop { display: none !important; }
           .nav-mobile-btn { display: flex !important; }

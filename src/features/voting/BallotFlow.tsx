@@ -78,9 +78,6 @@ function CandidateCard({ candidate, selected, onSelect }: {
           <p style={{ fontWeight: 800, fontSize: '16px', color: selected ? C.greenPrimary : '#1a1a1a', marginBottom: '4px' }}>
             {candidate.students.full_name}
           </p>
-          <p style={{ fontSize: '12px', color: C.textMuted, fontFamily: 'monospace', marginBottom: '10px' }}>
-            {candidate.students.student_id_number}
-          </p>
           {candidate.manifesto_text && (
             <div>
               <p style={{
@@ -92,6 +89,7 @@ function CandidateCard({ candidate, selected, onSelect }: {
               }}>{candidate.manifesto_text}</p>
               {candidate.manifesto_text.length > 120 && (
                 <button onClick={e => { e.stopPropagation(); setShowFull(v => !v); }}
+                  aria-expanded={showFull}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '12px', color: C.greenMid, fontWeight: 600, padding: '4px 0', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <FileText size={12} />{showFull ? 'Show less' : 'Read full manifesto'}
                 </button>
@@ -305,23 +303,43 @@ export default function BallotFlow() {
               <p style={{ fontSize: '13px', color: C.textMuted, marginTop: '6px' }}>
                 Select one candidate. Your vote is final after submission.
               </p>
+              {/* ETHICS: Ballot secrecy reassurance */}
+              <p style={{ fontSize: '12px', color: C.greenMid, marginTop: '4px', fontStyle: 'italic' }}>
+                🔒 Your vote is secret and cannot be traced back to you.
+              </p>
             </div>
 
+            {/* B-5: Empty candidates state */}
+            {position.candidates.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 24px', borderRadius: '16px', backgroundColor: C.creamCard, border: `1px solid ${C.creamBorder}`, marginBottom: '32px' }}>
+                <AlertTriangle size={32} color="#b45309" style={{ margin: '0 auto 12px' }} />
+                <p style={{ fontWeight: 700, color: '#92400e', marginBottom: '6px' }}>No candidates available</p>
+                <p style={{ fontSize: '13px', color: C.textMuted, lineHeight: 1.6 }}>
+                  No candidates have been approved for this position. Please notify the IT Coordinator.
+                </p>
+              </div>
+            ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '32px' }}
-              role="group" aria-label={`Candidates for ${position.title}`}>
+              role="radiogroup" aria-label={`Candidates for ${position.title}`}>
               {position.candidates.map(c => (
                 <CandidateCard key={c.id} candidate={c}
                   selected={selections[position.id] === c.id}
                   onSelect={handleSelect} />
               ))}
             </div>
+            )}
 
             <div style={{ display: 'flex', gap: '12px', justifyContent: 'space-between', alignItems: 'center' }}>
               {currentIdx > 0
                 ? <button onClick={handleBack} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 20px', borderRadius: '10px', border: `1.5px solid ${C.creamBorder}`, background: 'none', color: C.textMuted, fontSize: '14px', fontWeight: 600, cursor: 'pointer' }}>
                     <ChevronLeft size={17} /> Back
                   </button>
-                : <div />}
+                : <button
+                    onClick={() => { clearSession(); navigate('/vote', { replace: true }); }}
+                    aria-label="Cancel and exit ballot"
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '12px 16px', borderRadius: '10px', border: `1.5px solid ${C.creamBorder}`, background: 'none', color: C.textMuted, fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>
+                    <ChevronLeft size={17} /> Exit Ballot
+                  </button>}
 
               <button onClick={handleNext} disabled={!selected} style={{
                 display: 'flex', alignItems: 'center', gap: '8px',

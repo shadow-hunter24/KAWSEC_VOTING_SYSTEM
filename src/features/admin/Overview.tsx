@@ -53,6 +53,7 @@ export default function Overview() {
 
   async function load() {
     setLoading(true);
+    try {
 
     // All elections
     const { data: elecData } = await supabase
@@ -138,7 +139,11 @@ export default function Overview() {
     }
 
     setLastRefresh(new Date());
-    setLoading(false);
+    } catch (err) {
+      console.error('Overview load error:', err);
+    } finally {
+      setLoading(false); // OV-1: always unblock spinner
+    }
   }
 
   useEffect(() => { load(); }, []);
@@ -173,8 +178,8 @@ export default function Overview() {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button onClick={load} style={{ background: 'none', border: 'none', color: 'rgba(245,240,232,0.7)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
-              <RefreshCw size={14} /> Refresh
+            <button onClick={load} disabled={loading} style={{ background: 'none', border: 'none', color: 'rgba(245,240,232,0.7)', cursor: loading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', opacity: loading ? 0.5 : 1 }}>
+              <RefreshCw size={14} style={{ animation: loading ? 'spin 0.8s linear infinite' : 'none' }} /> Refresh
             </button>
             <Link to="/admin/dashboard" style={{ fontSize: '13px', color: 'rgba(245,240,232,0.7)', textDecoration: 'none' }}>← Dashboard</Link>
           </div>
@@ -306,7 +311,9 @@ export default function Overview() {
                             <span style={{ fontSize: '12px', color: C.textMuted }}>{p.voted}/{p.eligible} ({pct}%)</span>
                           </div>
                           <div style={{ height: '5px', borderRadius: '999px', backgroundColor: C.creamCard, overflow: 'hidden' }}>
-                            <div style={{ height: '100%', borderRadius: '999px', width: `${pct}%`, backgroundColor: pct >= 75 ? C.greenPrimary : pct >= 50 ? '#d97706' : '#ef4444', transition: 'width 0.5s' }} />
+                            <div style={{ height: '100%', borderRadius: '999px', width: `${pct}%`, backgroundColor: pct >= 75 ? C.greenPrimary : pct >= 50 ? '#d97706' : '#ef4444', transition: 'width 0.5s' }}
+                              role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}
+                              aria-label={`${p.title}: ${pct}% turnout`} />
                           </div>
                         </div>
                       );

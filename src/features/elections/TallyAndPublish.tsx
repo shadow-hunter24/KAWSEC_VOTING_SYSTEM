@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { AlertTriangle, CheckCircle, Trophy, Flag, ChevronDown, Medal } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Trophy, Flag, ChevronDown, Medal, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { TallyRow, Election } from '../../types';
 import { C } from '../../lib/tokens';
@@ -22,6 +22,12 @@ interface TallyGroup {
   panelDecisions:  Record<number, string>; // rank → panel decision
 }
 
+// Visually-hidden style for accessible labels
+const srOnly: React.CSSProperties = {
+  position: 'absolute', width: '1px', height: '1px', padding: 0, margin: -1,
+  overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0,
+};
+
 export default function TallyAndPublish() {
   const { electionId: urlId } = useParams<{ electionId: string }>();
   const navigate = useNavigate();
@@ -34,6 +40,7 @@ export default function TallyAndPublish() {
   const [error,      setError]      = useState('');
   const [success,    setSuccess]    = useState('');
   const [noData,     setNoData]     = useState(false);
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false); // TP-1
 
   // Load elections
   useEffect(() => {
@@ -50,7 +57,13 @@ export default function TallyAndPublish() {
   // Load tally when election changes
   useEffect(() => {
     if (!electionId) return;
-    setLoading(true); setError(''); setNoData(false); setGroups([]);
+    // TP-5: Block tally while voting is open to protect ballot secrecy
+    const sel = elections.find(e => e.id === electionId);
+    if (sel?.status === 'open') {
+      setGroups([]); setNoData(false); setLoading(false); setError(''); setSuccess('');
+      return;
+    }
+    setLoading(true); setError(''); setNoData(false); setGroups([]); setSuccess('');
 
     Promise.all([
       supabase.rpc('tally_election_results', { p_election_id: electionId }),
@@ -103,12 +116,13 @@ export default function TallyAndPublish() {
       setGroups(Object.values(map));
       setLoading(false);
     });
-  }, [electionId]);
+  }, [electionId, elections]);
 
   const hasPendingTies = groups.some(g =>
     g.ties.some(rank => rank <= g.ranks_to_publish && !g.panelDecisions[rank]?.trim())
   );
   const activeElection = elections.find(e => e.id === electionId);
+  const isOpenElection = activeElection?.status === 'open'; // TP-5
 
   // Update ranks_to_publish for a position
   async function updateRanks(positionId: string, ranks: number) {
@@ -178,10 +192,11 @@ export default function TallyAndPublish() {
           </div>
         ) : (
           <>
-            {/* Picker */}
+            {/* Picker — TP-3: associated label */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '28px', flexWrap: 'wrap' }}>
               <div style={{ position: 'relative' }}>
-                <select value={electionId} onChange={e => { setElectionId(e.target.value); setSuccess(''); setError(''); }}
+                <label htmlFor="tally-election-select" style={srOnly}>Election</label>
+                <select id="tally-election-select" value={electionId} onChange={e => { setElectionId(e.target.value); setSuccess(''); setError(''); }}
                   style={{ padding: '10px 40px 10px 14px', borderRadius: '10px', border: `1.5px solid ${C.creamBorder}`, fontSize: '14px', backgroundColor: '#fff', appearance: 'none', cursor: 'pointer', fontWeight: 600, color: C.greenPrimary, minWidth: '280px' }}>
                   {elections.map(e => <option key={e.id} value={e.id}>{e.title} — {e.status}</option>)}
                 </select>
@@ -194,17 +209,33 @@ export default function TallyAndPublish() {
               )}
             </div>
 
+            {/* TP-5: Block tally while voting is open */}
+            {isOpenElection && (
+              <div role="alert" style={{ display: 'flex', gap: '12px', padding: '20px 22px', borderRadius: '14px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', marginBottom: '24px', alignItems: 'flex-start' }}>
+                <AlertTriangle size={20} color="#b45309" style={{ flexShrink: 0, marginTop: '1px' }} />
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: '15px', color: '#92400e', marginBottom: '4px' }}>Tally is not available while voting is open.</p>
+                  <p style={{ fontSize: '13px', color: '#92400e', lineHeight: 1.6, marginBottom: '12px' }}>
+                    Close the election first to protect ballot secrecy. The tally and publish tools become available once voting has ended.
+                  </p>
+                  <Link to="/admin/elections" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '8px 16px', borderRadius: '8px', backgroundColor: '#92400e', color: '#fff', fontSize: '13px', fontWeight: 700, textDecoration: 'none' }}>
+                    Go to Election Settings →
+                  </Link>
+                </div>
+              </div>
+            )}
+
             {/* Feedback */}
             {error   && <div style={{ display: 'flex', gap: '10px', padding: '14px 16px', borderRadius: '12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', marginBottom: '20px' }}><AlertTriangle size={16} color="#dc2626" style={{ flexShrink: 0 }} /><p style={{ fontSize: '13px', color: '#dc2626' }}>{error}</p></div>}
             {success && <div style={{ display: 'flex', gap: '10px', padding: '14px 16px', borderRadius: '12px', backgroundColor: C.greenLight, border: `1px solid ${C.greenMid}40`, marginBottom: '20px' }}><CheckCircle size={16} color={C.greenPrimary} style={{ flexShrink: 0 }} /><p style={{ fontSize: '13px', color: C.greenPrimary, fontWeight: 600 }}>{success}</p></div>}
-            {hasPendingTies && <div style={{ display: 'flex', gap: '10px', padding: '14px 16px', borderRadius: '12px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', marginBottom: '24px' }}><Flag size={16} color="#b45309" style={{ flexShrink: 0 }} /><p style={{ fontSize: '13px', color: '#92400e', fontWeight: 600 }}>Tied positions detected. Enter panel decisions before publishing.</p></div>}
+            {hasPendingTies && !isOpenElection && <div style={{ display: 'flex', gap: '10px', padding: '14px 16px', borderRadius: '12px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', marginBottom: '24px' }}><Flag size={16} color="#b45309" style={{ flexShrink: 0 }} /><p style={{ fontSize: '13px', color: '#92400e', fontWeight: 600 }}>Tied positions detected. Enter panel decisions before publishing.</p></div>}
 
             {/* Loading / empty */}
             {loading && <div style={{ textAlign: 'center', padding: '64px' }}><div style={{ width: '40px', height: '40px', borderRadius: '50%', border: `3px solid ${C.creamBorder}`, borderTopColor: C.greenPrimary, margin: '0 auto 16px', animation: 'spin 0.8s linear infinite' }} /><p style={{ color: C.textMuted }}>Loading tally…</p></div>}
-            {!loading && noData && <div style={{ textAlign: 'center', padding: '64px', backgroundColor: '#fff', borderRadius: '16px', border: `1px solid ${C.creamBorder}` }}><p style={{ fontWeight: 700, color: C.greenPrimary, marginBottom: '8px' }}>No votes recorded yet</p><p style={{ fontSize: '13px', color: C.textMuted }}>Cast some votes first, or check that candidates are approved.</p></div>}
+            {!loading && noData && !isOpenElection && <div style={{ textAlign: 'center', padding: '64px', backgroundColor: '#fff', borderRadius: '16px', border: `1px solid ${C.creamBorder}` }}><p style={{ fontWeight: 700, color: C.greenPrimary, marginBottom: '8px' }}>No votes recorded yet</p><p style={{ fontSize: '13px', color: C.textMuted }}>Cast some votes first, or check that candidates are approved.</p></div>}
 
             {/* Tally groups */}
-            {!loading && !noData && groups.length > 0 && (
+            {!loading && !noData && !isOpenElection && groups.length > 0 && (
               <>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                   <h2 style={{ fontWeight: 800, fontSize: '17px', color: C.greenPrimary }}>Vote Tally — {groups.length} Position{groups.length !== 1 ? 's' : ''}</h2>
@@ -225,13 +256,14 @@ export default function TallyAndPublish() {
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             {group.ties.length > 0 && <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '999px', backgroundColor: '#fef3c7', color: '#b45309' }}>⚠ TIE</span>}
-                            {/* Ranks control */}
+                            {/* Ranks control — TP-4: ≥44px tap target */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span style={{ fontSize: '12px', color: C.textMuted }}>Publish top</span>
                               <select
                                 value={group.ranks_to_publish}
                                 onChange={e => updateRanks(group.position_id, Number(e.target.value))}
-                                style={{ padding: '4px 8px', borderRadius: '6px', border: `1.5px solid ${C.creamBorder}`, fontSize: '12px', fontWeight: 700, color: C.greenPrimary, backgroundColor: C.creamBg, cursor: 'pointer' }}
+                                aria-label={`Ranks to publish for ${group.position_title}`}
+                                style={{ padding: '10px 28px 10px 10px', borderRadius: '8px', border: `1.5px solid ${C.creamBorder}`, fontSize: '12px', fontWeight: 700, color: C.greenPrimary, backgroundColor: C.creamBg, cursor: 'pointer', minHeight: '44px' }}
                               >
                                 <option value={1}>1 (Main only)</option>
                                 <option value={2}>2 (Main + 1st Asst)</option>
@@ -295,20 +327,25 @@ export default function TallyAndPublish() {
                                   </div>
                                 </div>
 
-                                {/* Panel decision for ties within published range */}
+                                {/* Panel decision for ties within published range — TP-2: dropdown of tied candidates */}
                                 {isTied && included && (
                                   <div style={{ marginTop: '12px', padding: '12px 14px', borderRadius: '8px', backgroundColor: '#fefce8', border: '1px solid #fcd34d' }}>
                                     <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: '#92400e', marginBottom: '6px' }}>
                                       Panel Decision for Rank {rank} ({rankMeta.title}) tie:
                                     </label>
-                                    <input
+                                    <select
                                       value={group.panelDecisions[rank] ?? ''}
                                       onChange={e => setGroups(prev => prev.map((g, idx) =>
                                         idx === gi ? { ...g, panelDecisions: { ...g.panelDecisions, [rank]: e.target.value } } : g
                                       ))}
-                                      placeholder="Enter winner's full name as decided by the panel…"
-                                      style={{ width: '100%', padding: '9px 12px', borderRadius: '8px', border: '1.5px solid #fcd34d', fontSize: '13px', fontFamily: 'inherit', backgroundColor: '#fff', outline: 'none' }}
-                                    />
+                                      aria-label={`Panel decision for rank ${rank} tie`}
+                                      style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1.5px solid #fcd34d', fontSize: '13px', fontFamily: 'inherit', backgroundColor: '#fff', outline: 'none', cursor: 'pointer' }}
+                                    >
+                                      <option value="">— Select the winner as decided by the panel —</option>
+                                      {group.rows.filter(r => Number(r.rank) === rank).map(r => (
+                                        <option key={r.candidate_id} value={r.candidate_name}>{r.candidate_name}</option>
+                                      ))}
+                                    </select>
                                   </div>
                                 )}
                               </div>
@@ -320,7 +357,7 @@ export default function TallyAndPublish() {
                   })}
                 </div>
 
-                {/* Publish button */}
+                {/* Publish button — TP-1: opens confirmation modal */}
                 {!success && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', padding: '24px', backgroundColor: '#fff', borderRadius: '16px', border: `1px solid ${C.creamBorder}` }}>
                     <div style={{ flex: 1 }}>
@@ -331,7 +368,7 @@ export default function TallyAndPublish() {
                           : `Status is "${activeElection?.status}". Go to Election Settings → Mark Verified first.`}
                       </p>
                     </div>
-                    <button onClick={handlePublish}
+                    <button onClick={() => setShowPublishConfirm(true)}
                       disabled={publishing || hasPendingTies || activeElection?.status !== 'verified'}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
@@ -353,6 +390,43 @@ export default function TallyAndPublish() {
           </>
         )}
       </main>
+
+      {/* TP-1: Pre-publish confirmation modal */}
+      {showPublishConfirm && !success && (
+        <div role="dialog" aria-modal="true" aria-labelledby="publish-confirm-title"
+          onClick={e => { if (e.target === e.currentTarget) setShowPublishConfirm(false); }}
+          style={{ position: 'fixed', inset: 0, zIndex: 100, backgroundColor: 'rgba(15,45,26,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div style={{ backgroundColor: C.creamBg, borderRadius: '20px', width: '100%', maxWidth: '440px', boxShadow: '0 24px 64px rgba(15,45,26,0.35)', overflow: 'hidden' }}>
+            <div style={{ padding: '18px 24px', backgroundColor: C.greenPrimary, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2 id="publish-confirm-title" style={{ color: '#fff', fontWeight: 800, fontSize: '16px' }}>Confirm Publication</h2>
+              <button onClick={() => setShowPublishConfirm(false)} aria-label="Close"
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,240,232,0.7)', padding: '4px' }}>
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ padding: '24px' }}>
+              <p style={{ fontSize: '13px', color: C.textMuted, lineHeight: 1.6, marginBottom: '14px' }}>
+                You are about to publish official results for <strong style={{ color: C.greenPrimary }}>{activeElection?.title}</strong>.
+                This will write {groups.length} position{groups.length !== 1 ? 's' : ''} of results to the public results page.
+              </p>
+              <div style={{ padding: '12px 14px', borderRadius: '10px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', marginBottom: '18px', display: 'flex', gap: '8px', alignItems: 'flex-start' }}>
+                <AlertTriangle size={16} color="#b45309" style={{ flexShrink: 0, marginTop: '1px' }} />
+                <p style={{ fontSize: '12px', color: '#92400e', lineHeight: 1.5 }}>
+                  This action is recorded in the audit log and is visible to all students. To undo it later, use "Unpublish Results" in Election Settings.
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button onClick={() => setShowPublishConfirm(false)} style={{ flex: 1, padding: '11px', borderRadius: '10px', border: `1.5px solid ${C.creamBorder}`, background: 'none', color: C.textMuted, fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={() => { setShowPublishConfirm(false); handlePublish(); }} disabled={hasPendingTies}
+                  style={{ flex: 2, padding: '11px', borderRadius: '10px', border: 'none', backgroundColor: hasPendingTies ? C.creamBorder : C.greenPrimary, color: hasPendingTies ? C.textMuted : '#fff', fontSize: '13px', fontWeight: 700, cursor: hasPendingTies ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                  <CheckCircle size={15} /> Publish Now
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );

@@ -8,7 +8,7 @@
 
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { ChevronLeft, AlertTriangle, User } from 'lucide-react';
+import { ChevronLeft, AlertTriangle, User, CheckCircle } from 'lucide-react';
 import type { BallotAuthState, PositionWithCandidates } from './BallotFlow';
 import { useVotingSession } from '../../contexts/VotingSessionContext';
 import { C } from '../../lib/tokens';
@@ -90,7 +90,7 @@ export default function BallotReview() {
       markVoted();
 
       navigate('/vote/complete', {
-        state: { full_name, ballot_count: data.ballot_count, election_id },
+        state: { full_name, ballot_count: data.ballot_count, election_id, submittedAt: new Date().toISOString() },
         replace: true,
       });
     } catch {
@@ -116,8 +116,8 @@ export default function BallotReview() {
 
       <main style={{ maxWidth: '700px', margin: '0 auto', padding: '32px 20px 80px' }}>
 
-        {/* Warning */}
-        <div style={{ display: 'flex', gap: '12px', padding: '16px 18px', borderRadius: '12px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', marginBottom: '28px' }}>
+        {/* R-5: role="alert" on warning banner */}
+        <div role="alert" style={{ display: 'flex', gap: '12px', padding: '16px 18px', borderRadius: '12px', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', marginBottom: '28px' }}>
           <AlertTriangle size={18} color="#b45309" style={{ flexShrink: 0, marginTop: '1px' }} />
           <div>
             <p style={{ fontWeight: 700, fontSize: '13px', color: '#92400e' }}>Final check — this action cannot be undone</p>
@@ -134,6 +134,27 @@ export default function BallotReview() {
             <p style={{ fontSize: '13px', color: '#dc2626' }}>{error}</p>
           </div>
         )}
+
+        {/* R-2: positions answered count */}
+        {(() => {
+          const answered = reviewRows.filter(r => r.candidate).length;
+          const total = reviewRows.length;
+          const hasIncomplete = answered < total;
+          return (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '12px 16px', borderRadius: '10px', marginBottom: '20px',
+              backgroundColor: hasIncomplete ? '#fef2f2' : C.greenLight,
+              border: `1px solid ${hasIncomplete ? '#fecaca' : C.greenPrimary + '30'}`,
+            }} role={hasIncomplete ? 'alert' : undefined}>
+              <CheckCircle size={16} color={hasIncomplete ? '#dc2626' : C.greenPrimary} />
+              <p style={{ fontSize: '13px', fontWeight: 700, color: hasIncomplete ? '#dc2626' : C.greenPrimary }}>
+                {answered} of {total} position{total !== 1 ? 's' : ''} answered
+                {hasIncomplete && ` — ${total - answered} incomplete`}
+              </p>
+            </div>
+          );
+        })()}
 
         <h2 style={{ fontWeight: 800, fontSize: '18px', color: C.greenPrimary, marginBottom: '20px' }}>
           Your Selections ({reviewRows.length} position{reviewRows.length !== 1 ? 's' : ''})
@@ -171,12 +192,12 @@ export default function BallotReview() {
                 </p>
               </div>
 
-              {/* Checkmark */}
+              {/* Checkmark — R-7: use CheckCircle icon */}
               <div style={{
                 width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0,
                 backgroundColor: C.greenLight, display: 'flex', alignItems: 'center', justifyContent: 'center',
               }} aria-hidden="true">
-                <span style={{ color: C.greenPrimary, fontSize: '14px', fontWeight: 700 }}>✓</span>
+                <CheckCircle size={16} color={C.greenPrimary} />
               </div>
             </div>
           ))}
@@ -193,7 +214,7 @@ export default function BallotReview() {
               border: `1.5px solid ${C.creamBorder}`, background: 'none',
               color: C.textMuted, fontSize: '14px', fontWeight: 600, cursor: 'pointer',
             }}
-          ><ChevronLeft size={16} /> Go Back &amp; Edit</button>
+          ><ChevronLeft size={16} /> Go Back & Edit</button>
 
           <button
             onClick={handleSubmit}
@@ -211,7 +232,7 @@ export default function BallotReview() {
           >
             {submitting
               ? <><span style={{ width: '16px', height: '16px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.4)', borderTopColor: 'white', display: 'inline-block', animation: 'spin 0.7s linear infinite' }} aria-hidden="true" /> Submitting…</>
-              : '✓ Confirm &amp; Submit Ballot'}
+              : 'Confirm & Submit Ballot'}
           </button>
         </div>
       </main>
