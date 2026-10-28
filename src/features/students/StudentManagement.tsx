@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search, Edit2, X, Check, AlertTriangle,
-  ChevronLeft, ChevronRight, UserX, UserCheck, RefreshCw,
+  ChevronLeft, ChevronRight, UserX, UserCheck, RefreshCw, Printer,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { C } from '../../lib/tokens';
@@ -389,6 +389,109 @@ export default function StudentManagement() {
   const start      = page * PAGE_SIZE + 1;
   const end        = Math.min((page + 1) * PAGE_SIZE, total);
 
+  // ── Print class register ────────────────────────────────────
+  // Fetches ALL students for the selected class (not just current page)
+  // and opens a print dialog with a clean register sheet.
+  async function handlePrintRegister() {
+    if (!filterClass) return;
+
+    // Fetch all students in this class (no pagination limit)
+    const { data } = await supabase
+      .from('students')
+      .select('student_id_number, full_name, gender, houses(name), is_active')
+      .eq('class_id', filterClass)
+      .order('full_name');
+
+    if (!data || data.length === 0) return;
+
+    const className = classes.find(c => c.id === filterClass)?.name ?? 'Class';
+    const deptName  = departments.find(d => d.id === filterDept)?.name ?? '';
+
+    const rows = (data as { student_id_number: string; full_name: string; gender: string; houses: { name: string } | null; is_active: boolean }[]);
+
+    const tableRows = rows.map((s, i) => `
+      <tr style="border-bottom:1px solid #e8e0cc;">
+        <td style="padding:8px 12px;text-align:center;color:#5a5a4a;font-size:13px;">${i + 1}</td>
+        <td style="padding:8px 12px;font-weight:600;font-size:13px;">${s.full_name}</td>
+        <td style="padding:8px 12px;text-transform:capitalize;font-size:13px;">${s.gender}</td>
+        <td style="padding:8px 12px;font-size:13px;">${(s.houses as { name: string } | null)?.name ?? '—'}</td>
+        <td style="padding:8px 12px;font-family:monospace;font-weight:700;font-size:13px;color:#1a4d2e;">${s.student_id_number}</td>
+        <td style="padding:8px 12px;text-align:center;font-size:12px;">
+          <span style="display:inline-block;width:80px;border:1px solid #ccc;border-radius:4px;">&nbsp;</span>
+        </td>
+      </tr>
+    `).join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Class Register — ${className}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: Arial, sans-serif; color: #1a1a1a; padding: 28px; }
+          .header { display: flex; align-items: center; gap: 18px; margin-bottom: 20px; border-bottom: 3px solid #1a4d2e; padding-bottom: 16px; }
+          .header img { width: 60px; height: 60px; object-fit: contain; }
+          .header-text h1 { font-size: 20px; font-weight: 800; color: #1a4d2e; }
+          .header-text p  { font-size: 13px; color: #5a5a4a; margin-top: 3px; }
+          .meta { display: flex; gap: 32px; margin-bottom: 18px; font-size: 13px; color: #5a5a4a; }
+          .meta strong { color: #1a1a1a; }
+          table { width: 100%; border-collapse: collapse; }
+          thead tr { background: #e8f5ee; }
+          th { padding: 10px 12px; text-align: left; font-size: 12px; font-weight: 700; color: #1a4d2e; text-transform: uppercase; letter-spacing: 0.5px; }
+          tbody tr:nth-child(even) { background: #fffdf7; }
+          .footer { margin-top: 24px; border-top: 1px solid #e8e0cc; padding-top: 12px; font-size: 11px; color: #9a9a8a; text-align: center; }
+          @media print {
+            body { padding: 16px; }
+            @page { margin: 1.5cm; size: A4 portrait; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <img src="/logo.png" alt="KAWSEC" />
+          <div class="header-text">
+            <h1>Nkawkaw Senior High School (KAWSEC)</h1>
+            <p>Prefectorial Election — Student Voting Register</p>
+          </div>
+        </div>
+        <div class="meta">
+          <div><strong>Class:</strong> ${className}</div>
+          ${deptName ? `<div><strong>Department:</strong> ${deptName}</div>` : ''}
+          <div><strong>Total Students:</strong> ${rows.length}</div>
+          <div><strong>Date Printed:</strong> ${new Date().toLocaleDateString()}</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th style="width:40px;">#</th>
+              <th>Full Name</th>
+              <th style="width:80px;">Gender</th>
+              <th style="width:110px;">House</th>
+              <th style="width:190px;">Student ID (for voting)</th>
+              <th style="width:100px;">Signature</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+        <div class="footer">
+          Student IDs are used to log in to the KAWSEC Voting System. Keep this sheet confidential.
+          Printed by KAWSEC IT Department · ${new Date().toLocaleString()}
+        </div>
+      </body>
+      </html>
+    `;
+
+    const win = window.open('', '_blank', 'width=900,height=700');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    win.onload = () => { win.focus(); win.print(); };
+  }
+
   const inputStyle: React.CSSProperties = {
     padding: '9px 12px', borderRadius: '8px',
     border: `1.5px solid ${C.creamBorder}`, fontSize: '13px',
@@ -490,9 +593,25 @@ export default function StudentManagement() {
           <p style={{ fontSize: '13px', color: C.textMuted }}>
             {loading ? 'Loading…' : `Showing ${total === 0 ? 0 : start}–${end} of ${total.toLocaleString()} student${total !== 1 ? 's' : ''}`}
           </p>
-          <Link to="/admin/students/import" style={{ fontSize: '13px', fontWeight: 600, color: C.greenPrimary, textDecoration: 'none' }}>
-            + Import More Students
-          </Link>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            {filterClass && (
+              <button
+                onClick={handlePrintRegister}
+                title="Print class register with student IDs"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '7px 14px', borderRadius: '8px', border: 'none',
+                  backgroundColor: C.greenPrimary, color: '#fff',
+                  fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                <Printer size={13} /> Print Class Register
+              </button>
+            )}
+            <Link to="/admin/students/import" style={{ fontSize: '13px', fontWeight: 600, color: C.greenPrimary, textDecoration: 'none' }}>
+              + Import More Students
+            </Link>
+          </div>
         </div>
 
         {/* Table */}
