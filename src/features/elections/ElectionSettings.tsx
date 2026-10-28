@@ -250,7 +250,7 @@ export default function ElectionSettings() {
                           padding: '9px 16px', borderRadius: '8px',
                           backgroundColor: C.greenPrimary, color: '#fff',
                           fontSize: '12px', fontWeight: 700, textDecoration: 'none',
-                        }}>Go to Tally &amp; Publish <ChevronRight size={13} /></Link>
+                        }}>Go to Tally & Publish <ChevronRight size={13} /></Link>
                       )}
                       {el.status === 'draft' && (
                         <button

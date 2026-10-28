@@ -45,7 +45,7 @@ function CandidateCard({
           display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
         }}>
           {candidate.photo_url
-            ? <img src={candidate.photo_url} alt={candidate.students?.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ? <img src={candidate.photo_url} alt={candidate.students?.full_name ?? 'Candidate photo'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             : <User size={28} color={C.creamBorder} />}
         </div>
 
@@ -150,18 +150,25 @@ function CandidateCard({
 
       {/* Withdraw action — only for approved candidates */}
       {candidate.status === 'approved' && (
-        <div style={{ borderTop: `1px solid ${C.creamBorder}`, padding: '12px 18px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <button
-            onClick={() => { if (!withdrawLocked) setShowWithdraw(v => !v); }}
-            disabled={loading || withdrawLocked}
-            title={withdrawLocked ? 'Cannot withdraw after voting opens' : undefined}
-            style={{display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '8px 16px', borderRadius: '8px',
-              border: '1.5px solid #fcd34d', backgroundColor: '#fffbeb',
-              color: '#d97706', fontSize: '13px', fontWeight: 700,
-              cursor: (loading || withdrawLocked) ? 'not-allowed' : 'pointer',
-              opacity: withdrawLocked ? 0.4 : 1,}}
-          ><UserMinus size={14} /> {showWithdraw ? 'Cancel' : 'Withdraw'}</button>
+        <div style={{ borderTop: `1px solid ${C.creamBorder}`, padding: '12px 18px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => { if (!withdrawLocked) setShowWithdraw(v => !v); }}
+              disabled={loading || withdrawLocked}
+              aria-label={withdrawLocked ? 'Withdrawal not available after voting opens' : showWithdraw ? 'Cancel withdrawal' : 'Withdraw this candidate'}
+              style={{display: 'flex', alignItems: 'center', gap: '6px',
+                padding: '8px 16px', borderRadius: '8px',
+                border: '1.5px solid #fcd34d', backgroundColor: '#fffbeb',
+                color: '#d97706', fontSize: '13px', fontWeight: 700,
+                cursor: (loading || withdrawLocked) ? 'not-allowed' : 'pointer',
+                opacity: withdrawLocked ? 0.4 : 1,}}
+            ><UserMinus size={14} /> {showWithdraw ? 'Cancel' : 'Withdraw'}</button>
+          </div>
+          {withdrawLocked && (
+            <p style={{ fontSize: '11px', color: C.textMuted, fontStyle: 'italic' }}>
+              Withdrawal is not available after voting opens.
+            </p>
+          )}
         </div>
       )}
 
@@ -502,6 +509,25 @@ export default function CandidateManagement() {
                 >
                   {elections.map(e => <option key={e.id} value={e.id}>{e.title} ({e.status})</option>)}
                 </select>
+              </div>
+            )}
+
+            {/* Empty state when no positions created yet */}
+            {roleGroups.length === 0 && (
+              <div style={{ textAlign: 'center', padding: '64px 24px', backgroundColor: C.white, borderRadius: '16px', border: `1px solid ${C.creamBorder}` }}>
+                <div style={{ width: '56px', height: '56px', borderRadius: '50%', backgroundColor: C.creamCard, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <span style={{ fontSize: '24px' }}>📋</span>
+                </div>
+                <p style={{ fontWeight: 700, fontSize: '15px', color: C.greenPrimary, marginBottom: '8px' }}>No positions found for this election</p>
+                <p style={{ fontSize: '13px', color: C.textMuted, marginBottom: '20px', lineHeight: 1.6, maxWidth: '360px', margin: '0 auto 20px' }}>
+                  Create ballot positions first before adding candidates.
+                </p>
+                <Link to="/admin/positions" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  padding: '10px 20px', borderRadius: '10px',
+                  backgroundColor: C.greenPrimary, color: '#fff',
+                  fontSize: '13px', fontWeight: 700, textDecoration: 'none',
+                }}>Go to Position Management</Link>
               </div>
             )}
 

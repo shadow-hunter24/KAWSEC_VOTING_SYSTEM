@@ -234,6 +234,7 @@ export default function PositionManagement() {
   const [newRoleName,  setNewRoleName]  = useState('');
   const [newElig,      setNewElig]      = useState<'school_wide' | 'house'>('school_wide');
   const [newHouse,     setNewHouse]     = useState('');
+  const [splitByGender, setSplitByGender] = useState(true); // PM-1: toggle Male+Female vs All
   const [adding,       setAdding]       = useState(false);
 
   // Edit
@@ -287,36 +288,29 @@ export default function PositionManagement() {
 
     const sortBase = positions.length > 0 ? Math.max(...positions.map(p => p.sort_order)) + 1 : 1;
 
-    const { error: errMale } = await supabase.from('positions').insert({
-      election_id:       activeElec,
-      title:             `${roleName} (Male)`,
-      role_group:        roleName,
-      gender_scope:      'male',
-      eligibility_scope: newElig,
-      house_id:          newElig === 'house' ? newHouse : null,
-      sort_order:        sortBase,
-    });
+    if (splitByGender) {
+      // Insert Male + Female positions
+      const { error: errMale } = await supabase.from('positions').insert({
+        election_id: activeElec, title: `${roleName} (Male)`, role_group: roleName,
+        gender_scope: 'male', eligibility_scope: newElig,
+        house_id: newElig === 'house' ? newHouse : null, sort_order: sortBase,
+      });
+      if (errMale) { setSaveErr(errMale.message); setAdding(false); return; }
 
-    if (errMale) {
-      setSaveErr(errMale.message);
-      setAdding(false);
-      return;
-    }
-
-    const { error: errFemale } = await supabase.from('positions').insert({
-      election_id:       activeElec,
-      title:             `${roleName} (Female)`,
-      role_group:        roleName,
-      gender_scope:      'female',
-      eligibility_scope: newElig,
-      house_id:          newElig === 'house' ? newHouse : null,
-      sort_order:        sortBase + 1,
-    });
-
-    if (errFemale) {
-      setSaveErr(errFemale.message);
-      setAdding(false);
-      return;
+      const { error: errFemale } = await supabase.from('positions').insert({
+        election_id: activeElec, title: `${roleName} (Female)`, role_group: roleName,
+        gender_scope: 'female', eligibility_scope: newElig,
+        house_id: newElig === 'house' ? newHouse : null, sort_order: sortBase + 1,
+      });
+      if (errFemale) { setSaveErr(errFemale.message); setAdding(false); return; }
+    } else {
+      // Insert single all-gender position
+      const { error } = await supabase.from('positions').insert({
+        election_id: activeElec, title: roleName, role_group: roleName,
+        gender_scope: 'all', eligibility_scope: newElig,
+        house_id: newElig === 'house' ? newHouse : null, sort_order: sortBase,
+      });
+      if (error) { setSaveErr(error.message); setAdding(false); return; }
     }
 
     // Auto-generate entitlements so students can vote on these positions immediately
@@ -325,10 +319,10 @@ export default function PositionManagement() {
         p_election_id: activeElec,
       });
       const count = entData?.entitlements_created ?? 0;
-      setSaveMsg(`Role added: 2 positions created for "${roleName}". ${count} entitlements generated — eligible students can now vote on these positions.`);
+      setSaveMsg(`Role added: ${splitByGender ? '2 positions' : '1 position'} created for "${roleName}". ${count} entitlements generated — eligible students can now vote on these positions.`);
     } catch {
       // PM-4: entitlement-generation failures must surface as errors, not success
-      setSaveErr(`2 positions created for "${roleName}", but entitlement generation failed. Run "Approve & Generate Entitlements" in Election Settings so students can see them.`);
+      setSaveErr(`${splitByGender ? '2 positions' : '1 position'} created for "${roleName}", but entitlement generation failed. Run "Approve & Generate Entitlements" in Election Settings so students can see them.`);
     }
 
     setNewRoleName(''); setNewElig('school_wide'); setNewHouse('');
@@ -514,9 +508,44 @@ export default function PositionManagement() {
                       display: 'flex', alignItems: 'center', gap: '6px',
                     }}>
                       <ArrowRight size={13} style={{ flexShrink: 0 }} />
-                      Will create: &ldquo;{newRoleName.trim()} (Male)&rdquo; and &ldquo;{newRoleName.trim()} (Female)&rdquo;
+                      {splitByGender
+                        ? <>Will create: &ldquo;{newRoleName.trim()} (Male)&rdquo; and &ldquo;{newRoleName.trim()} (Female)&rdquo;</>
+                        : <>Will create: &ldquo;{newRoleName.trim()}&rdquo; (all genders vote)</>
+                      }
                     </div>
                   )}
+                </div>
+
+                {/* Gender split toggle — PM-1 */}
+                <div style={{ marginBottom: '12px' }}>
+                  <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.greenPrimary, marginBottom: '6px' }}>Position Type *</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setSplitByGender(true)}
+                      style={{
+                        flex: 1, padding: '9px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600,
+                        border: `1.5px solid ${splitByGender ? C.greenPrimary : C.creamBorder}`,
+                        backgroundColor: splitByGender ? C.greenLight : C.white,
+                        color: splitByGender ? C.greenPrimary : C.textMuted,
+                      }}
+                    >♂♀ Separate Male + Female</button>
+                    <button
+                      type="button"
+                      onClick={() => setSplitByGender(false)}
+                      style={{
+                        flex: 1, padding: '9px 14px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', fontWeight: 600,
+                        border: `1.5px solid ${!splitByGender ? C.greenPrimary : C.creamBorder}`,
+                        backgroundColor: !splitByGender ? C.greenLight : C.white,
+                        color: !splitByGender ? C.greenPrimary : C.textMuted,
+                      }}
+                    >⚪ Single Position (All)</button>
+                  </div>
+                  <p style={{ fontSize: '11px', color: C.textMuted, marginTop: '5px' }}>
+                    {splitByGender
+                      ? 'Creates two positions — one for male candidates and one for female candidates.'
+                      : 'Creates one position open to all genders.'}
+                  </p>
                 </div>
 
                 {/* Eligibility */}
@@ -547,7 +576,7 @@ export default function PositionManagement() {
                   color: adding ? C.textMuted : '#fff',
                   fontSize: '13px', fontWeight: 700, cursor: adding ? 'not-allowed' : 'pointer',
                 }}>
-                  <Plus size={15} /> {adding ? 'Adding…' : 'Add Role (2 positions)'}
+                  <Plus size={15} /> {adding ? 'Adding…' : splitByGender ? 'Add Role (2 positions)' : 'Add Role (1 position)'}
                 </button>
               </form>
             )}
