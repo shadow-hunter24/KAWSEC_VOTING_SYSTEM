@@ -68,12 +68,12 @@ export default function LandingPage() {
       setElection(el as LiveElection | null);
 
       if (el) {
-        const { data: posData } = await supabase
+        const { data: posData, error: posErr } = await supabase
           .from('positions')
           .select('id, title, role_group, gender_scope, eligibility_scope')
           .eq('election_id', el.id)
           .order('sort_order');
-        setPositions((posData as LivePosition[]) ?? []);
+        if (!posErr) setPositions((posData as LivePosition[]) ?? []);
       }
 
       setLoadingElec(false);
@@ -220,7 +220,9 @@ export default function LandingPage() {
               fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.5px', marginBottom: '16px',
             }}>
               {election ? election.title : 'KAWSEC Prefect'}<br />
-              <span style={{ color: C.creamCard }}>Elections</span>
+              <span style={{ color: C.creamCard }}>
+                {election ? (election.status === 'published' ? 'Results' : 'Voting') : 'Elections'}
+              </span>
             </h1>
 
             <p style={{ fontSize: '17px', fontWeight: 600, color: C.creamCard, marginBottom: '12px', opacity: 0.95 }}>
