@@ -14,8 +14,10 @@ dist-ssr
 
 # Environment variables — never commit secrets
 .env
-.env.*
+.env.local
+.env.*.local
 !.env.example
+!.env.production
 
 # Supabase CLI temp files
 supabase/.temp/
