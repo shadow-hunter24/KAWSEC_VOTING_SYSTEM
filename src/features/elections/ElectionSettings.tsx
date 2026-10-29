@@ -339,24 +339,47 @@ export default function ElectionSettings() {
                       {el.status === 'draft' && (
                         <button
                           onClick={async () => {
-                            if (!window.confirm('Delete this election? This cannot be undone.')) return;
+                            if (!window.confirm(`Delete "${el.title}"? This will permanently remove the election and ALL related data (positions, candidates, entitlements, ballots). This cannot be undone.`)) return;
                             setActionErr(''); setActionMsg('');
-                            // Best-effort audit log — do not block delete if this fails
                             try {
                               await supabase.from('audit_events').insert({
                                 action: 'election.deleted',
                                 actor: 'IT Coordinator',
-                                details: { election_id: el.id, title: el.title, status: 'draft' },
+                                details: { election_id: el.id, title: el.title, status: el.status },
                               });
                             } catch (_) { /* best-effort */ }
                             const { error } = await supabase.from('elections').delete().eq('id', el.id);
                             if (error) { setActionErr(error.message); }
-                            else { setActionMsg('Election deleted.'); await loadElections(); }
+                            else { setActionMsg(`"${el.title}" deleted successfully.`); await loadElections(); }
                           }}
                           aria-label={`Delete election ${el.title}`}
                           style={{display: 'flex', alignItems: 'center', gap: '6px',
                             padding: '9px 16px', borderRadius: '8px', border: 'none',
                             backgroundColor: '#dc2626', color: '#fff',
+                            fontSize: '12px', fontWeight: 700, cursor: 'pointer',}}
+                        ><Trash2 size={13} /> Delete</button>
+                      )}
+                      {/* Delete button for non-draft elections */}
+                      {el.status !== 'draft' && (
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm(`⚠ DELETE "${el.title}"?\n\nThis will permanently remove:\n• All positions and candidates\n• All votes and ballots\n• All entitlements and credentials\n• All published results\n\nThis CANNOT be undone. Are you absolutely sure?`)) return;
+                            setActionErr(''); setActionMsg('');
+                            try {
+                              await supabase.from('audit_events').insert({
+                                action: 'election.deleted',
+                                actor: 'IT Coordinator',
+                                details: { election_id: el.id, title: el.title, status: el.status },
+                              });
+                            } catch (_) { /* best-effort */ }
+                            const { error } = await supabase.from('elections').delete().eq('id', el.id);
+                            if (error) { setActionErr(`Delete failed: ${error.message}. Run the cascade FK migration in Supabase SQL Editor first.`); }
+                            else { setActionMsg(`"${el.title}" and all related data deleted.`); await loadElections(); }
+                          }}
+                          aria-label={`Delete election ${el.title}`}
+                          style={{display: 'flex', alignItems: 'center', gap: '6px',
+                            padding: '9px 16px', borderRadius: '8px',
+                            border: '1.5px solid #dc2626', backgroundColor: 'transparent', color: '#dc2626',
                             fontSize: '12px', fontWeight: 700, cursor: 'pointer',}}
                         ><Trash2 size={13} /> Delete</button>
                       )}
