@@ -2,10 +2,11 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Search, Edit2, X, Check, AlertTriangle,
-  ChevronLeft, ChevronRight, UserX, UserCheck, RefreshCw, Printer,
+  ChevronLeft, ChevronRight, UserX, UserCheck, RefreshCw, Printer, UserPlus,
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { C } from '../../lib/tokens';
+import AddStudentModal from './AddStudentModal';
 
 const PAGE_SIZE = 30;
 
@@ -288,7 +289,8 @@ export default function StudentManagement() {
   const [editing,  setEditing]  = useState<Student | null>(null);
   const [saveMsg,  setSaveMsg]  = useState('');
   const [saveErr,  setSaveErr]  = useState('');
-  const [confirmId, setConfirmId] = useState<string | null>(null); // SM-2
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [showAddStudent, setShowAddStudent] = useState(false);
 
   // SM-2: auto-clear the deactivation confirmation after a short delay
   useEffect(() => {
@@ -611,6 +613,12 @@ export default function StudentManagement() {
             <Link to="/admin/students/import" style={{ fontSize: '13px', fontWeight: 600, color: C.greenPrimary, textDecoration: 'none' }}>
               + Import More Students
             </Link>
+            <button
+              onClick={() => setShowAddStudent(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '7px 14px', borderRadius: '8px', border: 'none', backgroundColor: C.greenPrimary, color: '#fff', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              <UserPlus size={13} /> Add Student
+            </button>
           </div>
         </div>
 
@@ -733,6 +741,16 @@ export default function StudentManagement() {
           </div>
         )}
       </main>
+
+      {/* Add student modal */}
+      {showAddStudent && (
+        <AddStudentModal
+          classes={classes}
+          houses={houses}
+          onSave={() => { setSaveMsg('Student added successfully.'); loadStudents(0); setShowAddStudent(false); }}
+          onClose={() => setShowAddStudent(false)}
+        />
+      )}
 
       {/* Edit modal */}
       {editing && (
