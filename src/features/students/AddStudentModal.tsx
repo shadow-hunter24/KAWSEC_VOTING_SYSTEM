@@ -119,6 +119,17 @@ export default function AddStudentModal({
           </div>
 
           <div>
+            <label style={lbl}>Class * <span style={{ fontWeight: 400, color: C.textMuted }}>(determines student ID)</span></label>
+            <select value={form.class_id} onChange={e => setForm(f => ({ ...f, class_id: e.target.value }))}
+              style={{ ...inp, cursor: 'pointer' }} onFocus={foc} onBlur={blr} required>
+              <option value="">— Select class —</option>
+              {classOptions.map(c => (
+                <option key={c.id} value={c.id}>Form {c.year_group} · {c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
             <label style={lbl}>House</label>
             <select value={form.house_id} onChange={e => setForm(f => ({ ...f, house_id: e.target.value }))}
               style={{ ...inp, cursor: 'pointer' }} onFocus={foc} onBlur={blr}>
