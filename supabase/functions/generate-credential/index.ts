@@ -174,8 +174,28 @@ serve(async (req) => {
     }
   }
 
-  // ── 5. Check for existing unused credential ─────────────────
-  // If one exists and is not yet used, revoke it and issue fresh
+  // ── 5. Check for existing used credential (already authenticated) ─
+  // If a credential was already verified (used_at is set), the student
+  // has already passed authentication. They should not get a new one.
+  const { data: usedCred } = await supabase
+    .from("credential_verifiers")
+    .select("id, used_at, revoked")
+    .eq("student_id", student.id)
+    .eq("election_id", election_id)
+    .not("used_at", "is", null)
+    .eq("revoked", false)
+    .limit(1)
+    .single();
+
+  if (usedCred) {
+    return json({
+      success: false,
+      message: "A voting credential has already been issued and used for your account. You cannot generate a new one. If you have not yet voted, contact the IT Coordinator.",
+    }, 400);
+  }
+
+  // ── 5b. Revoke any existing UNUSED credential and issue fresh ──
+  // (Student confirmed identity but never entered their credential)
   await supabase
     .from("credential_verifiers")
     .update({ revoked: true, revoked_at: new Date().toISOString() })
