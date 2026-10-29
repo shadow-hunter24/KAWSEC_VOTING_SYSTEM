@@ -64,18 +64,18 @@ function CandidateCard({ candidate, selected, onSelect }: {
           <span style={{ color: '#fff', fontSize: '12px', fontWeight: 700 }}>Your selection</span>
         </div>
       )}
-      <div style={{ display: 'flex', gap: '16px', padding: '18px' }}>
+      <div style={{ display: 'flex', gap: '18px', padding: '20px' }}>
         <div style={{
-          width: '80px', height: '80px', borderRadius: '12px', flexShrink: 0,
+          width: '120px', height: '150px', borderRadius: '12px', flexShrink: 0,
           backgroundColor: C.creamCard, border: `1px solid ${C.creamBorder}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
         }}>
           {candidate.photo_url
             ? <img src={candidate.photo_url} alt={candidate.students.full_name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            : <User size={32} color={C.creamBorder} />}
+            : <User size={48} color={C.creamBorder} />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <p style={{ fontWeight: 800, fontSize: '16px', color: selected ? C.greenPrimary : '#1a1a1a', marginBottom: '4px' }}>
+          <p style={{ fontWeight: 800, fontSize: '20px', color: selected ? C.greenPrimary : '#1a1a1a', marginBottom: '6px' }}>
             {candidate.students.full_name}
           </p>
           {candidate.manifesto_text && (
