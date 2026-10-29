@@ -216,13 +216,12 @@ export default function LandingPage() {
             </div>
 
             <h1 id="hero-heading" style={{
-              fontSize: 'clamp(30px, 5.5vw, 54px)',
-              fontWeight: 800, lineHeight: 1.15, letterSpacing: '-0.5px', marginBottom: '16px',
+              fontSize: 'clamp(28px, 5vw, 52px)',
+              fontWeight: 800, lineHeight: 1.2, letterSpacing: '-0.5px', marginBottom: '16px',
             }}>
-              {election ? election.title : 'KAWSEC Prefect'}<br />
-              <span style={{ color: C.creamCard }}>
-                {election ? (election.status === 'published' ? 'Results' : 'Voting') : 'Elections'}
-              </span>
+              {election
+                ? election.title
+                : 'KAWSEC Prefectorial Elections'}
             </h1>
 
             <p style={{ fontSize: '17px', fontWeight: 600, color: C.creamCard, marginBottom: '12px', opacity: 0.95 }}>
