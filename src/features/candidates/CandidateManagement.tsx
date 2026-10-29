@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Check, X, ChevronDown, ChevronUp, User, FileText, AlertTriangle, UserMinus, Trash2 } from 'lucide-react';
+import { Plus, Check, X, ChevronDown, ChevronUp, User, FileText, AlertTriangle, UserMinus, Trash2, ImagePlus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import type { Position, Candidate, Election } from '../../types';
 import { C } from '../../lib/tokens';
@@ -244,11 +244,49 @@ function CandidateCard({
 function AddCandidateForm({
   positionId, electionId, onAdded,
 }: { positionId: string; electionId: string; onAdded: () => void }) {
-  const [studentId, setStudentId]   = useState('');
-  const [manifesto, setManifesto]   = useState('');
-  const [photoUrl,  setPhotoUrl]    = useState('');
-  const [loading,   setLoading]     = useState(false);
-  const [error,     setError]       = useState('');
+  const [studentId,    setStudentId]    = useState('');
+  const [manifesto,    setManifesto]    = useState('');
+  const [photoUrl,     setPhotoUrl]     = useState('');
+  const [photoPreview, setPhotoPreview] = useState('');
+  const [uploading,    setUploading]    = useState(false);
+  const [loading,      setLoading]      = useState(false);
+  const [error,        setError]        = useState('');
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function handlePhotoUpload(file: File) {
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file (JPG, PNG, etc.).');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Photo must be under 5 MB.');
+      return;
+    }
+    setUploading(true); setError('');
+
+    // Sanitise filename
+    const ext      = file.name.split('.').pop() ?? 'jpg';
+    const safeName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+    const path     = `candidates/${safeName}`;
+
+    const { error: upErr } = await supabase.storage
+      .from('candidate-photos')
+      .upload(path, file, { cacheControl: '3600', upsert: false });
+
+    if (upErr) {
+      setError(`Upload failed: ${upErr.message}`);
+      setUploading(false);
+      return;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from('candidate-photos')
+      .getPublicUrl(path);
+
+    setPhotoUrl(urlData.publicUrl);
+    setPhotoPreview(URL.createObjectURL(file));
+    setUploading(false);
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -256,7 +294,6 @@ function AddCandidateForm({
     setError(''); setLoading(true);
 
     try {
-      // Look up student
       const { data: student, error: sErr } = await supabase
         .from('students')
         .select('id')
@@ -279,7 +316,7 @@ function AddCandidateForm({
         return;
       }
 
-      setStudentId(''); setManifesto(''); setPhotoUrl('');
+      setStudentId(''); setManifesto(''); setPhotoUrl(''); setPhotoPreview('');
       onAdded();
     } finally {
       setLoading(false);
@@ -305,27 +342,77 @@ function AddCandidateForm({
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-        <div>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.greenPrimary, marginBottom: '4px' }}>
-            Student ID *
-          </label>
-          <input value={studentId} onChange={e => setStudentId(e.target.value)}
-            placeholder="e.g. KAWSEC/2024/001" style={inputStyle}
-            onFocus={e => { e.currentTarget.style.borderColor = C.greenPrimary; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; }} />
-        </div>
-        <div>
-          <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.greenPrimary, marginBottom: '4px' }}>
-            Photo URL <span style={{ fontWeight: 400, color: C.textMuted }}>(optional)</span>
-          </label>
-          <input value={photoUrl} onChange={e => setPhotoUrl(e.target.value)}
-            placeholder="https://…/photo.jpg" style={inputStyle}
-            onFocus={e => { e.currentTarget.style.borderColor = C.greenPrimary; }}
-            onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; }} />
-        </div>
+      {/* Student ID */}
+      <div style={{ marginBottom: '10px' }}>
+        <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.greenPrimary, marginBottom: '4px' }}>
+          Student ID *
+        </label>
+        <input value={studentId} onChange={e => setStudentId(e.target.value)}
+          placeholder="e.g. KAWSEC-SCI3A-2026-0001" style={inputStyle}
+          onFocus={e => { e.currentTarget.style.borderColor = C.greenPrimary; }}
+          onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; }} />
       </div>
 
+      {/* Photo upload */}
+      <div style={{ marginBottom: '10px' }}>
+        <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.greenPrimary, marginBottom: '6px' }}>
+          Photo <span style={{ fontWeight: 400, color: C.textMuted }}>(optional)</span>
+        </label>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Preview */}
+          <div style={{
+            width: '64px', height: '64px', borderRadius: '10px', flexShrink: 0,
+            backgroundColor: C.creamCard, border: `1.5px solid ${C.creamBorder}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+          }}>
+            {photoPreview
+              ? <img src={photoPreview} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              : <User size={24} color={C.creamBorder} />}
+          </div>
+          {/* Upload button */}
+          <div>
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              style={{
+                display: 'inline-flex', alignItems: 'center', gap: '6px',
+                padding: '8px 14px', borderRadius: '8px', border: 'none',
+                backgroundColor: uploading ? C.creamBorder : C.greenLight,
+                color: uploading ? C.textMuted : C.greenPrimary,
+                fontSize: '12px', fontWeight: 700,
+                cursor: uploading ? 'not-allowed' : 'pointer',
+              }}
+            >
+              <ImagePlus size={14} />
+              {uploading ? 'Uploading…' : photoUrl ? 'Change Photo' : 'Upload Photo'}
+            </button>
+            {photoUrl && (
+              <p style={{ fontSize: '11px', color: C.greenPrimary, marginTop: '4px', fontWeight: 600 }}>
+                ✓ Photo uploaded
+              </p>
+            )}
+            {!photoUrl && (
+              <p style={{ fontSize: '11px', color: C.textMuted, marginTop: '4px' }}>
+                JPG, PNG · Max 5 MB
+              </p>
+            )}
+          </div>
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          style={{ display: 'none' }}
+          onChange={e => {
+            const file = e.target.files?.[0];
+            if (file) handlePhotoUpload(file);
+            e.target.value = '';
+          }}
+        />
+      </div>
+
+      {/* Manifesto */}
       <div style={{ marginBottom: '12px' }}>
         <label style={{ display: 'block', fontSize: '12px', fontWeight: 600, color: C.greenPrimary, marginBottom: '4px' }}>
           Manifesto <span style={{ fontWeight: 400, color: C.textMuted }}>(optional)</span>
@@ -337,12 +424,12 @@ function AddCandidateForm({
           onBlur={e => { e.currentTarget.style.borderColor = C.creamBorder; }} />
       </div>
 
-      <button type="submit" disabled={loading} style={{
+      <button type="submit" disabled={loading || uploading} style={{
         padding: '9px 18px', borderRadius: '8px', border: 'none',
-        backgroundColor: loading ? C.creamBorder : C.greenPrimary,
-        color: loading ? C.textMuted : '#fff',
+        backgroundColor: (loading || uploading) ? C.creamBorder : C.greenPrimary,
+        color: (loading || uploading) ? C.textMuted : '#fff',
         fontSize: '13px', fontWeight: 700,
-        cursor: loading ? 'not-allowed' : 'pointer',
+        cursor: (loading || uploading) ? 'not-allowed' : 'pointer',
       }}>{loading ? 'Adding…' : 'Add Candidate'}</button>
     </form>
   );
